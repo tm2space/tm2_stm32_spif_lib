@@ -64,17 +64,17 @@ extern "C"
 #define SPIF_SECTOR_SIZE                    0x1000
 #define SPIF_BLOCK_SIZE                     0x10000
 
-#define SPIF_PageToSector(PageNumber)      ((PageNumber * SPIF_PAGE_SIZE) / SPIF_SECTOR_SIZE)
-#define SPIF_PageToBlock(PageNumber)       ((PageNumber * SPIF_PAGE_SIZE) / SPIF_BLOCK_SIZE)
-#define SPIF_SectorToBlock(SectorNumber)   ((SectorNumber * SPIF_SECTOR_SIZE) / SPIF_BLOCK_SIZE)
-#define SPIF_SectorToPage(SectorNumber)    ((SectorNumber * SPIF_SECTOR_SIZE) / SPIF_PAGE_SIZE)
-#define SPIF_BlockToPage(BlockNumber)      ((BlockNumber * SPIF_BLOCK_SIZE) / SPIF_PAGE_SIZE)
-#define SPIF_PageToAddress(PageNumber)     (PageNumber * SPIF_PAGE_SIZE)
-#define SPIF_SectorToAddress(SectorNumber) (SectorNumber * SPIF_SECTOR_SIZE)
-#define SPIF_BlockToAddress(BlockNumber)   (BlockNumber * SPIF_BLOCK_SIZE)
-#define SPIF_AddressToPage(Address)        (Address / SPIF_PAGE_SIZE)
-#define SPIF_AddressToSector(Address)      (Address / SPIF_SECTOR_SIZE)
-#define SPIF_AddressToBlock(Address)       (Address / SPIF_BLOCK_SIZE)
+#define SPIF_PageToSector(PageNumber)      (((PageNumber) * SPIF_PAGE_SIZE) / SPIF_SECTOR_SIZE)
+#define SPIF_PageToBlock(PageNumber)       (((PageNumber) * SPIF_PAGE_SIZE) / SPIF_BLOCK_SIZE)
+#define SPIF_SectorToBlock(SectorNumber)   (((SectorNumber) * SPIF_SECTOR_SIZE) / SPIF_BLOCK_SIZE)
+#define SPIF_SectorToPage(SectorNumber)    (((SectorNumber) * SPIF_SECTOR_SIZE) / SPIF_PAGE_SIZE)
+#define SPIF_BlockToPage(BlockNumber)      (((BlockNumber) * SPIF_BLOCK_SIZE) / SPIF_PAGE_SIZE)
+#define SPIF_PageToAddress(PageNumber)     ((PageNumber) * SPIF_PAGE_SIZE)
+#define SPIF_SectorToAddress(SectorNumber) ((SectorNumber) * SPIF_SECTOR_SIZE)
+#define SPIF_BlockToAddress(BlockNumber)   ((BlockNumber) * SPIF_BLOCK_SIZE)
+#define SPIF_AddressToPage(Address)        ((Address) / SPIF_PAGE_SIZE)
+#define SPIF_AddressToSector(Address)      ((Address) / SPIF_SECTOR_SIZE)
+#define SPIF_AddressToBlock(Address)       ((Address) / SPIF_BLOCK_SIZE)
 
 /************************************************************************************************************
 **************    Public struct/enum
