@@ -27,7 +27,7 @@
 /************************************************************************************************************
 **************    Private Definitions
 ************************************************************************************************************/
-
+#ifdef (SPIF_COMPAT == SPIF_COMPAT_W25XX)
 #define SPIF_DUMMY_BYTE 0xA5
 
 #define SPIF_CMD_READSFDP 0x5A
@@ -90,6 +90,99 @@
 #define SPIF_STATUS3_DRV1 (1 << 6)
 #define SPIF_STATUS3_HOLD (1 << 7)
 
+#elif (SPIF_COMPAT == SPIF_COMPAT_IS25XX)
+
+#define SPIF_CMD_NORMALREADMODE 0x03
+#define SPIF_CMD_4BYTEADDRREAD 0x13
+#define SPIF_CMD_FASTREAD 0x0B
+#define SPIF_CMD_4BYTEADDRFASTREAD 0x0C
+#define SPIF_CMD_FASTREADDUALIO 0xBB
+#define SPIF_CMD_4BYTEADDRFASTREADDUALIO 0xBC
+#define SPIF_CMD_FASTREADDUALOUTPUT 0x3B
+#define SPIF_CMD_4BYTEADDRFASTREADDUALOUTPUT 0x3C
+#define SPIF_CMD_FASTREADQUADIO 0xEB
+#define SPIF_CMD_4BYTEADDRFASTREADQUADIO 0xEC
+#define SPIF_CMD_FASTREADQUADOUTPUT 0x6B
+#define SPIF_CMD_4BYTEADDRFASTREADQUADOUTPUT 0x6C
+#define SPIF_CMD_FASTREADDTRIO 0x0D
+#define SPIF_CMD_4BYTEADDRFASTREADDTRIO 0x0E
+#define SPIF_CMD_FASTREADDTRIOIO 0xBD
+#define SPIF_CMD_4BYTEADDRFASTREADDTRIOIO 0xBE
+#define SPIF_CMD_FASTREADQUADDTRIO 0xED
+#define SPIF_CMD_4BYTEADDRFASTREADQUADDTRIO 0xEE
+#define SPIF_CMD_INPUTPAGEPROGRAM 0x02
+#define SPIF_CMD_4BYTEADDRINPUTPAGEPROGRAM 0x12
+#define SPIF_CMD_QUADPAGEPROGRAM 0x32
+#define SPIF_CMD_4BYTEADDRQUADPAGEPROGRAM 0x34
+#define SPIF_CMD_SECORERASE 0x20
+#define SPIF_CMD_4BYTEADDRSECORERASE 0x21
+#define SPIF_CMD_BLOCKERASE32K 0x52
+#define SPIF_CMD_4BYTEADDRBLOCKERASE32K 0x5C
+#define SPIF_CMD_BLOCKERASE64K 0xD8
+#define SPIF_CMD_4BYTEADDRBLOCKERASE64K 0xDC
+#define SPIF_CMD_CHIPERASE 0xC7
+#define SPIF_CMD_WRITEENABLE 0x06
+#define SPIF_CMD_WRITEDISABLE 0x04
+#define SPIF_CMD_READSTATUSREG 0x05
+#define SPIF_CMD_WRITESTATUSREG 0x01
+#define SPIF_CMD_READFNREG 0x48
+#define SPIF_CMD_WRITEFNREG 0x42
+#define SPIF_CMD_ENTERQPI 0x35
+#define SPIF_CMD_EXITQPI 0xF5
+#define SPIF_CMD_SUSPEND 0x75
+#define SPIF_CMD_RESUME 0x7A
+#define SPIF_CMD_DEEPPOWERDOWN 0xB9
+#define SPIF_CMD_READID 0xAB
+#define SPIF_CMD_RELEASEPOWERDOWN 0xAB
+#define SPIF_CMD_SETREADPARAMNONVOLATILE 0x65
+#define SPIF_CMD_SETREADPARAMVOLATILE 0xC0
+#define SPIF_CMD_SETEXTEENDEDREADPARAMNONVOLATILE 0x85
+#define SPIF_CMD_SETEXTEENDEDREADPARAMVOLATILE 0x83
+#define SPIF_CMD_READREADPARAMVOLATILE 0x61 
+#define SPIF_CMD_READREADEXTENDEDPARAMVOLATILE 0x81
+#define SPIF_CMD_CLEAREXTENDEDREADREG 0x82
+#define SPIF_CMD_READJEDECID 0x9F
+#define SPIF_CMD_READMANUFACTURERID 0x90
+#define SPIF_CMD_READJEDECIDQPI 0xAF
+#define SPIF_CMD_READUNIQUEID 0x4B
+#define SPIF_CMD_READSFDP 0x5A
+#define SPIF_CMD_NOOP 0x00
+#define SPIF_CMD_SOFTRESETENABLE 0x66
+#define SPIF_CMD_SOFTRESET 0x99
+#define SPIF_CMD_ERASEINFOROW 0x64
+#define SPIF_CMD_PROGRAMINFOROW 0x62
+#define SPIF_CMD_READINFOROW 0x68
+#define SPIF_CMD_SECTORUNLOCK 0x26
+#define SPIF_CMD_4BYTEADDRSECTORUNLOCK 0x25
+#define SPIF_CMD_SECTORLOCK 0x24
+#define SPIF_CMD_READAUTOBOOTREG 0x14
+#define SPIF_CMD_WRITEAUTOBOOTREG 0x15
+#define SPIF_CMD_READBANKADDRESSREG 0x16
+#define SPIF_CMD_WRITEBANKADDRESSREGVOLATILE 0x17
+#define SPIF_CMD_WRITEBANKADDRESSREGNONVOLATILE 0x18
+#define SPIF_CMD_ENTER4BYTEADDR 0xB7
+#define SPIF_CMD_EXIT4BYTEADDR 0x29
+#define SPIF_CMD_READDYB 0xFA
+#define SPIF_CMD_4BYTEADDRREADDYB 0xE0
+#define SPIF_CMD_WRITEDYB 0xFB
+#define SPIF_CMD_4BYTEADDRWRITEDYB 0xE1
+#define SPIF_CMD_READPPB 0xFC
+#define SPIF_CMD_4BYTEADDRREADPPB 0xE2
+#define SPIF_CMD_PROGPPB 0xFD
+#define SPIF_CMD_4BYTEADDRPROGPPB 0xE3
+#define SPIF_CMD_ERASEPPB 0xE4
+#define SPIF_CMD_READASP 0x2B
+#define SPIF_CMD_PROGRMASP 0x2F
+#define SPIF_CMD_READPPBLOCKBIT 0xA7
+#define SPIF_CMD_WRITEPPBLOCKBIT 0xA6
+#define SPIF_CMD_SETFREEZEBIT 0x91
+#define SPIF_CMD_READPASSWORD 0xE7
+#define SPIF_CMD_PROGRAMPASSWORD 0xE8
+#define SPIF_CMD_UNLOCKPASSWORD 0xE9
+#define SPIF_CMD_SETALLDYBBITS 0x7E
+#define SPIF_CMD_CLEARALLDYBBITS 0x98
+
+#endif
 /************************************************************************************************************
 **************    Private Functions
 ************************************************************************************************************/
@@ -877,7 +970,7 @@ bool SPIF_ReadFn(SPIF_HandleTypeDef *Handle, uint32_t Address, uint8_t *Data, ui
 /************************************************************************************************************
 **************    Public Functions
 ************************************************************************************************************/
-#if SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI
+#if (SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI)
 /**
   * @brief  Initialize the SPIF.
   * @note   Enable and configure the OCTOSPI and Set GPIO as output for CS pin on the CubeMX
@@ -1458,3 +1551,29 @@ bool SPIF_ReadBlock(SPIF_HandleTypeDef *Handle, uint32_t BlockNumber, uint8_t *D
   SPIF_UnLock(Handle);
   return retVal;
 }
+
+
+#ifdef (SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI)
+
+/*
+  * @brief  Write QPI Enable command
+  * @note   Send the QPI-Enable command
+  * 
+  * @param  *Handle: Pointer to SPIF_HandleTypeDef structure
+  * 
+  * @retval bool: true or false
+  */
+ bool SPIF_QPI_Enable(SPIF_HandleTypeDef *Handle)
+ {
+   bool retVal = true;
+   uint8_t tx[1] = {SPIF_CMD_ENABLE_QPI_MODE};
+   SPIF_CsPin(Handle, 0);
+   if (SPIF_Transmit(Handle, tx, 1, 100) == false)
+   {
+     retVal = false;
+     dprintf("SPIF_QPI_Enable() Error\r\n");
+   }
+   SPIF_CsPin(Handle, 1);
+   return retVal;
+ }
+#endif 

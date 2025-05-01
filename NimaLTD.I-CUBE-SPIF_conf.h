@@ -49,6 +49,10 @@
 /*---------- SPIF_RTOS  -----------*/
 #define SPIF_RTOS      SPIF_RTOS_DISABLE
 
+/*---------- SPIF_COMPAT  -----------*/
+#define SPIF_COMPAT      SPIF_COMPAT_IS25XX
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -55,7 +55,7 @@ extern "C"
 #include <string.h>
 #include "NimaLTD.I-CUBE-SPIF_conf.h"
 
-#ifdef SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI
+#ifdef (SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI)
  #include "stm32u5xx_hal_ospi.h" 
 #else
  #include "spi.h"
@@ -84,6 +84,11 @@ extern "C"
 /************************************************************************************************************
 **************    Public struct/enum
 ************************************************************************************************************/
+typedef enum
+{
+  SPIF_COMPAT_W25XX = 0,
+  SPIF_COMPAT_IS25XX = 1,
+}SPIF_COMPAT
 
 typedef enum
 {
@@ -126,7 +131,7 @@ typedef enum
 
 typedef struct
 {
-  #ifdef SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI
+  #ifdef (SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI)
     OSPI_HandleTypeDef      *HOspi;
   #else
     SPI_HandleTypeDef       *HSpi;
@@ -149,7 +154,7 @@ typedef struct
 /************************************************************************************************************
 **************    Public Functions
 ************************************************************************************************************/
-#if SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI
+#if (SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI)
 bool SPIF_OCTOSPI_Init(SPIF_HandleTypeDef *Handle, OSPI_HandleTypeDef *HOspi, GPIO_TypeDef *Gpio, uint16_t Pin);
 #else
 bool SPIF_Init(SPIF_HandleTypeDef *Handle, SPI_HandleTypeDef *HSpi, GPIO_TypeDef *Gpio, uint16_t Pin);
@@ -168,6 +173,10 @@ bool SPIF_ReadAddress(SPIF_HandleTypeDef *Handle, uint32_t Address, uint8_t *Dat
 bool SPIF_ReadPage(SPIF_HandleTypeDef *Handle, uint32_t PageNumber, uint8_t *Data, uint32_t Size, uint32_t Offset);
 bool SPIF_ReadSector(SPIF_HandleTypeDef *Handle, uint32_t SectorNumber, uint8_t *Data, uint32_t Size, uint32_t Offset);
 bool SPIF_ReadBlock(SPIF_HandleTypeDef *Handle, uint32_t BlockNumber, uint8_t *Data, uint32_t Size, uint32_t Offset);
+
+#ifdef (SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI)
+bool  SPIF_QPI_Enable(SPIF_HandleTypeDef *Handle);
+#endif
 
 #ifdef __cplusplus
 }
