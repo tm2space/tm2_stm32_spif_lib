@@ -54,7 +54,12 @@ extern "C"
 #include <stdbool.h>
 #include <string.h>
 #include "NimaLTD.I-CUBE-SPIF_conf.h"
-#include "spi.h"
+
+#ifdef SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI
+ #include "octospi.h" 
+#else
+ #include "spi.h"
+#endif
 
 /************************************************************************************************************
 **************    Public Definitions
@@ -121,7 +126,12 @@ typedef enum
 
 typedef struct
 {
-  SPI_HandleTypeDef      *HSpi;
+  #ifdef SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI
+    OSPI_HandleTypeDef      *HOspi;
+  #else
+    SPI_HandleTypeDef       *HSpi;
+  #endif
+//   SPI_HandleTypeDef      *HSpi;
   GPIO_TypeDef           *Gpio;
   SPIF_ManufactorTypeDef Manufactor;
   SPIF_SizeTypeDef       Size;
@@ -139,8 +149,11 @@ typedef struct
 /************************************************************************************************************
 **************    Public Functions
 ************************************************************************************************************/
-
+#if SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI
+bool SPIF_OCTOSPI_Init(SPIF_HandleTypeDef *Handle, OSPI_HandleTypeDef *HOspi, GPIO_TypeDef *Gpio, uint16_t Pin);
+#else
 bool SPIF_Init(SPIF_HandleTypeDef *Handle, SPI_HandleTypeDef *HSpi, GPIO_TypeDef *Gpio, uint16_t Pin);
+#endif
 
 bool SPIF_EraseChip(SPIF_HandleTypeDef *Handle);
 bool SPIF_EraseSector(SPIF_HandleTypeDef *Handle, uint32_t Sector);

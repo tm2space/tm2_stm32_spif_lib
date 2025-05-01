@@ -29,6 +29,7 @@
 
 #define SPIF_PLATFORM_HAL                     0
 #define SPIF_PLATFORM_HAL_DMA                 1
+#define SPIF_PLATFORM_OCTOSPI                 2
 
 #define SPIF_RTOS_DISABLE                     0
 #define SPIF_RTOS_CMSIS_V1                    1
@@ -43,7 +44,7 @@
 #define SPIF_DEBUG      SPIF_DEBUG_DISABLE
 
 /*---------- SPIF_PLATFORM  -----------*/
-#define SPIF_PLATFORM      SPIF_PLATFORM_HAL
+#define SPIF_PLATFORM      SPIF_PLATFORM_OCTOSPI
 
 /*---------- SPIF_RTOS  -----------*/
 #define SPIF_RTOS      SPIF_RTOS_DISABLE
