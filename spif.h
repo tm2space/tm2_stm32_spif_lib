@@ -56,7 +56,7 @@ extern "C"
 #include "NimaLTD.I-CUBE-SPIF_conf.h"
 
 #ifdef SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI
- #include "octospi.h" 
+ #include "stm32u5xx_hal_ospi.h" 
 #else
  #include "spi.h"
 #endif
