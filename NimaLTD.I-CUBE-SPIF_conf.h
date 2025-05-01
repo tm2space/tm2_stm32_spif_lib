@@ -36,6 +36,9 @@
 #define SPIF_RTOS_CMSIS_V2                    2
 #define SPIF_RTOS_THREADX                     3
 
+#define SPIF_COMPAT_W25XX					    0
+#define SPIF_COMPAT_IS25XX				 	  1
+
 /**
 	MiddleWare name : NimaLTD.I-CUBE-SPIF.2.3.1
 	MiddleWare fileName : ./NimaLTD.I-CUBE-SPIF_conf.h
