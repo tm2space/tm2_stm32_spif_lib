@@ -1553,7 +1553,7 @@ bool SPIF_ReadBlock(SPIF_HandleTypeDef *Handle, uint32_t BlockNumber, uint8_t *D
 }
 
 
-#ifdef (SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI)
+#ifdef (SPIF_COMPAT == SPIF_COMPAT_IS25XX)
 
 /*
   * @brief  Write QPI Enable command
