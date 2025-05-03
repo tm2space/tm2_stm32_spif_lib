@@ -92,6 +92,8 @@
 
 #elif (SPIF_COMPAT == SPIF_COMPAT_IS25XX)
 
+#define SPIF_DUMMY_BYTE 0xA5 //TODO: confirm value
+
 #define SPIF_CMD_READDATA3ADD 0x03
 #define SPIF_CMD_READDATA4ADD 0x13
 #define SPIF_CMD_FASTREAD 0x0B
@@ -182,7 +184,78 @@
 #define SPIF_CMD_SETALLDYBBITS 0x7E
 #define SPIF_CMD_CLEARALLDYBBITS 0x98
 
+/*status register definitions*/
+#define SPIF_STATUS_WIP (1 << 0)
+#define SPIF_STATUS_WEL (1 << 1)
+#define SPIF_STATUS_BP0 (1 << 2)
+#define SPIF_STATUS_BP1 (1 << 3)
+#define SPIF_STATUS_BP2 (1 << 4)
+#define SPIF_STATUS_BP3 (1 << 5)
+#define SPIF_STATUS_QE (1 << 6)
+#define SPIF_STATUS_SRWD (1 << 7)
+
+/*Function Register definitions*/
+#define SPIF_FNREG_DEDICATEDRESET (1 << 0)
+#define SPIF_FNREG_TBS (1 << 1)
+#define SPIF_FNREG_PSUS (1 << 2)
+#define SPIF_FNREG_ESUS (1 << 3)
+#define SPIF_FNREG_IRLOCK0 (1 << 4)
+#define SPIF_FNREG_IRLOCK1 (1 << 5)
+#define SPIF_FNREG_IRLOCK2 (1 << 6)
+#define SPIF_FNREG_IRLOCK3 (1 << 7)
+
+/*Read Register definitons*/
+#define SPIF_READREG_BURSTLEN0 (1 << 0)
+#define SPIF_READREG_BURSTLEN1 (1 << 1)
+#define SPIF_READREG_BURSTLENENABLE (1 << 2)
+#define SPIF_READREG_DUMMYCYCLES0 (1 << 3)
+#define SPIF_READREG_DUMMYCYCLES1 (1 << 4)
+#define SPIF_READREG_DUMMYCYCLES2 (1 << 5)
+#define SPIF_READREG_DUMMYCYCLES3 (1 << 6)
+#define SPIF_READREG_HOLD_RESET (1 << 7)
+
+/*Extended Read Register definitions*/
+#define SPIF_EXTENDEDREADREG_WIP (1 << 0)
+#define SPIF_EXTENDEDREADREG_PROT_E (1 << 1)
+#define SPIF_EXTENDEDREADREG_P_ERR (1 << 2)
+#define SPIF_EXTENDEDREADREG_E_ERR (1 << 3)
+// bit 4 is reserved
+#define SPIF_EXTENDEDREADREG_ODS0 (1 << 5)
+#define SPIF_EXTENDEDREADREG_ODS1 (1 << 6)
+#define SPIF_EXTENDEDREADREG_ODS2 (1 << 7)
+
+/* AutoBoot Register definitions */
+#define SPIF_AUTOBootREG_ABSA      (0xFFFFFFE0)  // Bits AB[31:5] - AutoBoot Start Address
+#define SPIF_AUTOBootREG_ABSD      (0x0000001E)  // Bits AB[4:1]  - AutoBoot Start Delay
+#define SPIF_AUTOBootREG_ABE       (1 << 0)      // Bit  AB[0]    - AutoBoot Enable
+
+/* Bank Address Register*/
+#define SPIF_BANKADDRESSREG_EXTADD (1 << 7) //3-byte or 4-byte addressing selection Bit 
+//other bits are all reserved
+
+/* Advanced Sector/Block Protection Register (ASPR) definitions */
+// bit 0 is reserved
+#define SPIF_ASPR_PSTMLB   (1 << 1)  // Persistent Protection Mode Lock Bit
+#define SPIF_ASPR_PWDMLB   (1 << 2)  // Password Protection Mode Lock Bit
+//bit 3 to 14 are reserved
+#define SPIF_ASPR_TBPARM   (1 << 15) // Top/Bottom Parameter Sector 
+
+/*Password Register*/
+// TODO: define the password register bits
+
+/*PPB Lock Register*/
+#define SPIF_PPBLOCKREG_PPBLOCK (1 << 0) //PPB Lock Bit 
+//bit 1 to 6 are reserved
+#define SPIF_PPBLOCKREG_FREEZE (1 << 7) 
+
+/*PPB Register*/
+//TODO: confirm if need this definition
+
+/*DYB register*/
+//TODO: confirm if need this definition
+
 #endif
+
 /************************************************************************************************************
 **************    Private Functions
 ************************************************************************************************************/
@@ -476,7 +549,8 @@ bool SPIF_WriteDisable(SPIF_HandleTypeDef *Handle)
 }
 
 /***********************************************************************************************************/
-
+// This reads status register 1 for SPIF_COMPAT_W25XX
+// This will also read the only status register for SPIF_COMPAT_IS25XX
 uint8_t SPIF_ReadReg1(SPIF_HandleTypeDef *Handle)
 {
   uint8_t retVal = 0;
@@ -495,6 +569,8 @@ uint8_t SPIF_ReadReg1(SPIF_HandleTypeDef *Handle)
 
 uint8_t SPIF_ReadReg2(SPIF_HandleTypeDef *Handle)
 {
+  #if (SPIF_COMPAT == SPIF_COMPAT_W25XX)
+
   uint8_t retVal = 0;
   uint8_t tx[2] = {SPIF_CMD_READSTATUS2, SPIF_DUMMY_BYTE};
   uint8_t rx[2];
@@ -505,12 +581,18 @@ uint8_t SPIF_ReadReg2(SPIF_HandleTypeDef *Handle)
   }
   SPIF_CsPin(Handle, 1);
   return retVal;
+  #elif (SPIF_COMPAT == SPIF_COMPAT_IS25XX)
+    dprintf("SPIF_ReadReg2() not supported\r\n");
+    return 0;
+  #endif
 }
 
 /***********************************************************************************************************/
 
 uint8_t SPIF_ReadReg3(SPIF_HandleTypeDef *Handle)
 {
+  #if (SPIF_COMPAT == SPIF_COMPAT_W25XX)
+  
   uint8_t retVal = 0;
   uint8_t tx[2] = {SPIF_CMD_READSTATUS3, SPIF_DUMMY_BYTE};
   uint8_t rx[2];
@@ -521,6 +603,10 @@ uint8_t SPIF_ReadReg3(SPIF_HandleTypeDef *Handle)
   }
   SPIF_CsPin(Handle, 1);
   return retVal;
+  #elif (SPIF_COMPAT == SPIF_COMPAT_IS25XX)
+    dprintf("SPIF_ReadReg3() not supported\r\n");
+    return 0;
+  #endif
 }
 
 /***********************************************************************************************************/
@@ -529,9 +615,14 @@ bool SPIF_WriteReg1(SPIF_HandleTypeDef *Handle, uint8_t Data)
 {
   bool retVal = true;
   uint8_t tx[2] = {SPIF_CMD_WRITESTATUS1, Data};
+
+  #if (SPIF_COMPAT == SPIF_COMPAT_W25XX)
   uint8_t cmd = SPIF_CMD_WRITESTATUSEN;
+  #endif
   do
   {
+    #if (SPIF_COMPAT == SPIF_COMPAT_W25XX)
+    
     SPIF_CsPin(Handle, 0);
     if (SPIF_Transmit(Handle, &cmd, 1, 100) == false)
     {
@@ -540,6 +631,14 @@ bool SPIF_WriteReg1(SPIF_HandleTypeDef *Handle, uint8_t Data)
       break;
     }
     SPIF_CsPin(Handle, 1);
+
+    #elif (SPIF_COMPAT == SPIF_COMPAT_IS25XX)
+    if (SPIF_WriteEnable(Handle) == false){
+      retVal = false;
+      break;
+    }
+    #endif
+
     SPIF_CsPin(Handle, 0);
     if (SPIF_Transmit(Handle, tx, 2, 100) == false)
     {
@@ -557,6 +656,8 @@ bool SPIF_WriteReg1(SPIF_HandleTypeDef *Handle, uint8_t Data)
 
 bool SPIF_WriteReg2(SPIF_HandleTypeDef *Handle, uint8_t Data)
 {
+  #if (SPIF_COMPAT == SPIF_COMPAT_W25XX)
+  
   bool retVal = true;
   uint8_t tx[2] = {SPIF_CMD_WRITESTATUS2, Data};
   uint8_t cmd = SPIF_CMD_WRITESTATUSEN;
@@ -581,12 +682,18 @@ bool SPIF_WriteReg2(SPIF_HandleTypeDef *Handle, uint8_t Data)
   } while (0);
 
   return retVal;
+  #elif (SPIF_COMPAT == SPIF_COMPAT_IS25XX)
+    dprintf("SPIF_WriteReg2() not supported\r\n");
+    return false;
+  #endif
 }
 
 /***********************************************************************************************************/
 
 bool SPIF_WriteReg3(SPIF_HandleTypeDef *Handle, uint8_t Data)
 {
+  #if (SPIF_COMPAT == SPIF_COMPAT_W25XX)
+
   bool retVal = true;
   uint8_t tx[2] = {SPIF_CMD_WRITESTATUS3, Data};
   uint8_t cmd = SPIF_CMD_WRITESTATUSEN;
@@ -611,6 +718,10 @@ bool SPIF_WriteReg3(SPIF_HandleTypeDef *Handle, uint8_t Data)
   } while (0);
 
   return retVal;
+  #elif (SPIF_COMPAT == SPIF_COMPAT_IS25XX)
+    dprintf("SPIF_WriteReg3() not supported\r\n");
+    return false;
+  #endif
 }
 
 /***********************************************************************************************************/
