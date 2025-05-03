@@ -738,7 +738,11 @@ bool SPIF_WaitForWriting(SPIF_HandleTypeDef *Handle, uint32_t Timeout)
       dprintf("SPIF_WaitForWriting() TIMEOUT\r\n");
       break;
     }
+    #if (SPIF_COMPAT == SPIF_COMPAT_W25XX)
     if ((SPIF_ReadReg1(Handle) & SPIF_STATUS1_BUSY) == 0)
+    #elif (SPIF_COMPAT == SPIF_COMPAT_IS25XX)
+    if ((SPIF_ReadReg1(Handle) & SPIF_STATUS_WIP) == 0)
+    #endif
     {
       retVal = true;
       break;
