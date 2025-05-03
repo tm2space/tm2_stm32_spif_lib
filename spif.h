@@ -171,6 +171,10 @@ bool SPIF_ReadPage(SPIF_HandleTypeDef *Handle, uint32_t PageNumber, uint8_t *Dat
 bool SPIF_ReadSector(SPIF_HandleTypeDef *Handle, uint32_t SectorNumber, uint8_t *Data, uint32_t Size, uint32_t Offset);
 bool SPIF_ReadBlock(SPIF_HandleTypeDef *Handle, uint32_t BlockNumber, uint8_t *Data, uint32_t Size, uint32_t Offset);
 
+bool SPIF_SendCmd(SPIF_HandleTypeDef *Handle, uint8_t Cmd, uint8_t *Data, uint32_t Size);
+bool SPIF_SendCmdReceive(SPIF_HandleTypeDef *Handle, uint8_t Cmd, uint8_t *RxData, uint32_t Size);
+
+
 #if (SPIF_COMPAT == SPIF_COMPAT_IS25XX)
 bool  SPIF_QPI_Enable(SPIF_HandleTypeDef *Handle);
 #endif

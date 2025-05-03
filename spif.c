@@ -1692,3 +1692,73 @@ bool SPIF_ReadBlock(SPIF_HandleTypeDef *Handle, uint32_t BlockNumber, uint8_t *D
    return retVal;
  }
 #endif 
+
+/*
+  * @brief  Send Command to SPIF
+  * @note   Send command and data to SPIF
+  *
+  * @param  *Handle: Pointer to SPIF_HandleTypeDef structure
+  * @param  Cmd: Command to send
+  * @param  *Data: Pointer to Data (input), Data can be null
+  * @param  Size: The length of data should be written. (in byte), Size can be 0
+  *
+  * @retval bool: true or false
+*/
+bool SPIF_SendCmd(SPIF_HandleTypeDef *Handle, uint8_t Cmd, uint8_t *Data, uint32_t Size){
+  bool retVal = false;
+  uint8_t tx[1] = {Cmd};
+  SPIF_CsPin(Handle, 0);
+  if (SPIF_WriteEnable(Handle) == false)
+  {
+    SPIF_CsPin(Handle, 1);
+    dprintf("SPIF_SendCmd() Error\r\n");
+    return retVal;
+  }
+
+  if (SPIF_Transmit(Handle, tx, 1, 100) == false)
+  {
+    SPIF_CsPin(Handle, 1);
+    dprintf("SPIF_SendCmd() Error\r\n");
+    return retVal;
+  }
+
+  if (Data != NULL && Size > 0)
+  {
+    if (SPIF_Transmit(Handle, Data, Size, 100) == false)
+    {
+      SPIF_CsPin(Handle, 1);
+      dprintf("SPIF_SendCmd() Error\r\n");
+      return retVal;
+    }
+  }
+
+  SPIF_CsPin(Handle, 1);
+  retVal = true;
+  return retVal;
+}
+
+
+bool SPIF_SendCmdReceive(SPIF_HandleTypeDef *Handle, uint8_t Cmd, uint8_t *RxData, uint32_t Size)
+{
+  bool retVal = false;
+  uint8_t tx[1] = {Cmd};
+  SPIF_CsPin(Handle, 0);
+  if (SPIF_WriteEnable(Handle) == false)
+  {
+    SPIF_CsPin(Handle, 1);
+    dprintf("SPIF_SendCmdReceive() Error\r\n");
+    return retVal;
+  }
+
+  if (SPIF_TransmitReceive(Handle, tx, RxData, Size, 100) == false)
+  {
+    SPIF_CsPin(Handle, 1);
+    dprintf("SPIF_SendCmdReceive() Error\r\n");
+    return retVal;
+  }
+
+  SPIF_WriteDisable(Handle);
+  SPIF_CsPin(Handle, 1);
+  retVal = true;
+  return retVal;
+}
