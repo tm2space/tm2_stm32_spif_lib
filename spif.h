@@ -3,68 +3,74 @@
 
 /***********************************************************************************************************
 
-  Author:     Nima Askari
-  Github:     https://www.github.com/NimaLTD
-  LinkedIn:   https://www.linkedin.com/in/nimaltd
-  Youtube:    https://www.youtube.com/@nimaltd
-  Instagram:  https://instagram.com/github.NimaLTD
+ Author:     Nima Askari
+ Github:     https://www.github.com/NimaLTD
+ LinkedIn:   https://www.linkedin.com/in/nimaltd
+ Youtube:    https://www.youtube.com/@nimaltd
+ Instagram:  https://instagram.com/github.NimaLTD
 
-  Version:    2.3.1
+ Version:    2.3.1
 
-  History:
-  
-        2.3.1
-              - Fixed SPIF_WriteSector() and SPIF_WriteBlock()
-              
-        2.3.0
-              - Added ThreadX Configuration
+ History:
 
-        2.2.2
-              - Compile error
+ 2.3.1
+ - Fixed SPIF_WriteSector() and SPIF_WriteBlock()
 
-        2.2.1
-              - Updated SPIF_WriteAddress()
+ 2.3.0
+ - Added ThreadX Configuration
 
-  
-        2.2.0
-              - Added SPI_Trasmit and SPI_Receive again :)
+ 2.2.2
+ - Compile error
 
-              2.1.0
-              - Added Support HAL-DMA
-              - Removed SPI_Trasmit function
+ 2.2.1
+ - Updated SPIF_WriteAddress()
 
-              2.0.1
-              - Removed SPI_Receive function
 
-              2.0.0
-              - Rewrite again
-              - Supported STM32CubeMx Packet installer
+ 2.2.0
+ - Added SPI_Trasmit and SPI_Receive again :)
 
-***********************************************************************************************************/
+ 2.1.0
+ - Added Support HAL-DMA
+ - Removed SPI_Trasmit function
+
+ 2.0.1
+ - Removed SPI_Receive function
+
+ 2.0.0
+ - Rewrite again
+ - Supported STM32CubeMx Packet installer
+
+ ***********************************************************************************************************/
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
+#if SPIF_DEBUG == SPIF_DEBUG_DISABLE
+#define dprintf(...)
+#else
+#include <stdio.h>
+#define dprintf(...) printf(__VA_ARGS__)
+#endif
 /************************************************************************************************************
-**************    Include Headers
-************************************************************************************************************/
+ **************    Include Headers
+ ************************************************************************************************************/
 
 #include <stdbool.h>
 #include <string.h>
 #include "NimaLTD.I-CUBE-SPIF_conf.h"
 
 #if (SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI)
-  #include "stm32u5xx_hal.h"
-  #include "stm32u5xx_hal_ospi.h" 
+// #include "stm32u5xx_hal.h"
+#include "ospi.h"
 #else
  #include "spi.h"
 #endif
 
 /************************************************************************************************************
-**************    Public Definitions
-************************************************************************************************************/
+ **************    Public Definitions
+ ************************************************************************************************************/
 
 #define SPIF_PAGE_SIZE                      0x100
 #define SPIF_SECTOR_SIZE                    0x1000
@@ -83,101 +89,120 @@ extern "C"
 #define SPIF_AddressToBlock(Address)       ((Address) / SPIF_BLOCK_SIZE)
 
 /************************************************************************************************************
-**************    Public struct/enum
-************************************************************************************************************/
+ **************    Public struct/enum
+ ************************************************************************************************************/
 
-
-typedef enum
-{
-  SPIF_MANUFACTOR_ERROR = 0,
-  SPIF_MANUFACTOR_WINBOND = 0xEF,
-  SPIF_MANUFACTOR_ISSI = 0xD5,
-  SPIF_MANUFACTOR_MICRON = 0x20,
-  SPIF_MANUFACTOR_GIGADEVICE = 0xC8,
-  SPIF_MANUFACTOR_MACRONIX = 0xC2,
-  SPIF_MANUFACTOR_SPANSION = 0x01,
-  SPIF_MANUFACTOR_AMIC = 0x37,
-  SPIF_MANUFACTOR_SST = 0xBF,
-  SPIF_MANUFACTOR_HYUNDAI = 0xAD,
-  SPIF_MANUFACTOR_ATMEL = 0x1F,
-  SPIF_MANUFACTOR_FUDAN = 0xA1,
-  SPIF_MANUFACTOR_ESMT = 0x8C,
-  SPIF_MANUFACTOR_INTEL = 0x89,
-  SPIF_MANUFACTOR_SANYO = 0x62,
-  SPIF_MANUFACTOR_FUJITSU = 0x04,
-  SPIF_MANUFACTOR_EON = 0x1C,
-  SPIF_MANUFACTOR_PUYA = 0x85,
+typedef enum {
+	SPIF_MANUFACTOR_ERROR = 0,
+	SPIF_MANUFACTOR_WINBOND = 0xEF,
+	SPIF_MANUFACTOR_ISSI = 0xD5,
+	SPIF_MANUFACTOR_MICRON = 0x20,
+	SPIF_MANUFACTOR_GIGADEVICE = 0xC8,
+	SPIF_MANUFACTOR_MACRONIX = 0xC2,
+	SPIF_MANUFACTOR_SPANSION = 0x01,
+	SPIF_MANUFACTOR_AMIC = 0x37,
+	SPIF_MANUFACTOR_SST = 0xBF,
+	SPIF_MANUFACTOR_HYUNDAI = 0xAD,
+	SPIF_MANUFACTOR_ATMEL = 0x1F,
+	SPIF_MANUFACTOR_FUDAN = 0xA1,
+	SPIF_MANUFACTOR_ESMT = 0x8C,
+	SPIF_MANUFACTOR_INTEL = 0x89,
+	SPIF_MANUFACTOR_SANYO = 0x62,
+	SPIF_MANUFACTOR_FUJITSU = 0x04,
+	SPIF_MANUFACTOR_EON = 0x1C,
+	SPIF_MANUFACTOR_PUYA = 0x85,
 
 } SPIF_ManufactorTypeDef;
 
-typedef enum
-{
-  SPIF_SIZE_ERROR = 0,
-  SPIF_SIZE_1MBIT = 0x11,
-  SPIF_SIZE_2MBIT = 0x12,
-  SPIF_SIZE_4MBIT = 0x13,
-  SPIF_SIZE_8MBIT = 0x14,
-  SPIF_SIZE_16MBIT = 0x15,
-  SPIF_SIZE_32MBIT = 0x16,
-  SPIF_SIZE_64MBIT = 0x17,
-  SPIF_SIZE_128MBIT = 0x18,
-  SPIF_SIZE_256MBIT = 0x19,
-  SPIF_SIZE_512MBIT = 0x20,
+typedef enum {
+	SPIF_SIZE_ERROR = 0,
+	SPIF_SIZE_1MBIT = 0x11,
+	SPIF_SIZE_2MBIT = 0x12,
+	SPIF_SIZE_4MBIT = 0x13,
+	SPIF_SIZE_8MBIT = 0x14,
+	SPIF_SIZE_16MBIT = 0x15,
+	SPIF_SIZE_32MBIT = 0x16,
+	SPIF_SIZE_64MBIT = 0x17,
+	SPIF_SIZE_128MBIT = 0x18,
+	SPIF_SIZE_256MBIT = 0x19,
+	SPIF_SIZE_512MBIT = 0x20,
 
 } SPIF_SizeTypeDef;
 
-typedef struct
-{
-  #if (SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI)
-    OSPI_HandleTypeDef      *HOspi;
-  #else
-    SPI_HandleTypeDef       *HSpi;
-  #endif
+typedef struct {
+//  #if (SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI)
+//    OSPI_HandleTypeDef      *HOspi;
+//  #else
+//    SPI_HandleTypeDef       *HSpi;
+//  #endif
 //   SPI_HandleTypeDef      *HSpi;
-  GPIO_TypeDef           *Gpio;
-  SPIF_ManufactorTypeDef Manufactor;
-  SPIF_SizeTypeDef       Size;
-  uint8_t                Inited;
-  uint8_t                MemType;
-  uint8_t                Lock;
-  uint8_t                Reserved;
-  uint32_t               Pin;
-  uint32_t               PageCnt;
-  uint32_t               SectorCnt;
-  uint32_t               BlockCnt;
+	void *interface;
+	GPIO_TypeDef *Gpio;
+	SPIF_ManufactorTypeDef Manufactor;
+	SPIF_SizeTypeDef Size;
+	uint8_t Inited;
+	uint8_t MemType;
+	uint8_t Lock;
+	uint8_t Reserved;
+	uint32_t Pin;
+	uint32_t PageCnt;
+	uint32_t SectorCnt;
+	uint32_t BlockCnt;
 
 } SPIF_HandleTypeDef;
 
 /************************************************************************************************************
-**************    Public Functions
-************************************************************************************************************/
-#if (SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI)
-bool SPIF_OCTOSPI_Init(SPIF_HandleTypeDef *Handle, OSPI_HandleTypeDef *HOspi, GPIO_TypeDef *Gpio, uint16_t Pin);
-#else
-bool SPIF_Init(SPIF_HandleTypeDef *Handle, SPI_HandleTypeDef *HSpi, GPIO_TypeDef *Gpio, uint16_t Pin);
-#endif
+ **************    Public Functions
+ ************************************************************************************************************/
+/*helper functions*/
 
+void SPIF_Delay(uint32_t Delay);
+void SPIF_Lock(SPIF_HandleTypeDef *Handle);
+void SPIF_UnLock(SPIF_HandleTypeDef *Handle);
+void SPIF_CsPin(SPIF_HandleTypeDef *Handle, bool Select);
+bool SPIF_WriteEnable(SPIF_HandleTypeDef *Handle);
+bool SPIF_WriteDisable(SPIF_HandleTypeDef *Handle);
+bool SPIF_WaitForWriting(SPIF_HandleTypeDef *Handle, uint32_t Timeout);
+bool SPIF_FindChip(SPIF_HandleTypeDef *Handle);
+
+bool SPIF_TransmitReceive(SPIF_HandleTypeDef *Handle, uint8_t *Tx, uint8_t *Rx, size_t Size, uint32_t Timeout);
+bool SPIF_Transmit(SPIF_HandleTypeDef *Handle, uint8_t *Tx, size_t Size, uint32_t Timeout);
+bool SPIF_Receive(SPIF_HandleTypeDef *Handle, uint8_t *Rx, size_t Size, uint32_t Timeout);
+
+
+// Initialization
+//bool SPIF_Init(SPIF_HandleTypeDef *Handle, void *InterfaceHandle, GPIO_TypeDef *Gpio, uint16_t Pin);
+
+// Erase operations
 bool SPIF_EraseChip(SPIF_HandleTypeDef *Handle);
 bool SPIF_EraseSector(SPIF_HandleTypeDef *Handle, uint32_t Sector);
 bool SPIF_EraseBlock(SPIF_HandleTypeDef *Handle, uint32_t Block);
 
-bool SPIF_WriteAddress(SPIF_HandleTypeDef *Handle, uint32_t Address, uint8_t *Data, uint32_t Size);
-bool SPIF_WritePage(SPIF_HandleTypeDef *Handle, uint32_t PageNumber, uint8_t *Data, uint32_t Size, uint32_t Offset);
-bool SPIF_WriteSector(SPIF_HandleTypeDef *Handle, uint32_t SectorNumber, uint8_t *Data, uint32_t Size, uint32_t Offset);
-bool SPIF_WriteBlock(SPIF_HandleTypeDef *Handle, uint32_t BlockNumber, uint8_t *Data, uint32_t Size, uint32_t Offset);
+// Write operations
+bool SPIF_WriteAddress(SPIF_HandleTypeDef *Handle, uint32_t Address,
+		uint8_t *Data, uint32_t Size);
+bool SPIF_WritePage(SPIF_HandleTypeDef *Handle, uint32_t PageNumber,
+		uint8_t *Data, uint32_t Size, uint32_t Offset);
+bool SPIF_WriteSector(SPIF_HandleTypeDef *Handle, uint32_t SectorNumber,
+		uint8_t *Data, uint32_t Size, uint32_t Offset);
+bool SPIF_WriteBlock(SPIF_HandleTypeDef *Handle, uint32_t BlockNumber,
+		uint8_t *Data, uint32_t Size, uint32_t Offset);
 
-bool SPIF_ReadAddress(SPIF_HandleTypeDef *Handle, uint32_t Address, uint8_t *Data, uint32_t Size);
-bool SPIF_ReadPage(SPIF_HandleTypeDef *Handle, uint32_t PageNumber, uint8_t *Data, uint32_t Size, uint32_t Offset);
-bool SPIF_ReadSector(SPIF_HandleTypeDef *Handle, uint32_t SectorNumber, uint8_t *Data, uint32_t Size, uint32_t Offset);
-bool SPIF_ReadBlock(SPIF_HandleTypeDef *Handle, uint32_t BlockNumber, uint8_t *Data, uint32_t Size, uint32_t Offset);
+// Read operations
+bool SPIF_ReadAddress(SPIF_HandleTypeDef *Handle, uint32_t Address,
+		uint8_t *Data, uint32_t Size);
+bool SPIF_ReadPage(SPIF_HandleTypeDef *Handle, uint32_t PageNumber,
+		uint8_t *Data, uint32_t Size, uint32_t Offset);
+bool SPIF_ReadSector(SPIF_HandleTypeDef *Handle, uint32_t SectorNumber,
+		uint8_t *Data, uint32_t Size, uint32_t Offset);
+bool SPIF_ReadBlock(SPIF_HandleTypeDef *Handle, uint32_t BlockNumber,
+		uint8_t *Data, uint32_t Size, uint32_t Offset);
 
-bool SPIF_SendCmd(SPIF_HandleTypeDef *Handle, uint8_t Cmd, uint8_t *Data, uint32_t Size);
-bool SPIF_SendCmdReceive(SPIF_HandleTypeDef *Handle, uint8_t Cmd, uint8_t *RxData, uint32_t Size);
-
-
-#if (SPIF_COMPAT == SPIF_COMPAT_IS25XX)
-bool  SPIF_QPI_Enable(SPIF_HandleTypeDef *Handle);
-#endif
+// Command operations
+bool SPIF_SendCmd(SPIF_HandleTypeDef *Handle, uint8_t Cmd, uint8_t *Data,
+		uint32_t Size);
+bool SPIF_SendCmdReceive(SPIF_HandleTypeDef *Handle, uint8_t Cmd,
+		uint8_t *RxData, uint32_t Size);
 
 #ifdef __cplusplus
 }

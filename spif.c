@@ -4,14 +4,9 @@
 ************************************************************************************************************/
 
 #include "spif.h"
+#include <stdlib.h>
+#include "NimaLTD.I-CUBE-SPIF_conf.h"
 
-
-#if SPIF_DEBUG == SPIF_DEBUG_DISABLE
-#define dprintf(...)
-#else
-#include <stdio.h>
-#define dprintf(...) printf(__VA_ARGS__)
-#endif
 
 #if SPIF_RTOS == SPIF_RTOS_DISABLE
 #elif SPIF_RTOS == SPIF_RTOS_CMSIS_V1
@@ -24,261 +19,20 @@
 #include "app_threadx.h"
 #endif
 
-/************************************************************************************************************
-**************    Private Definitions
-************************************************************************************************************/
+
 #if (SPIF_COMPAT == SPIF_COMPAT_W25XX)
-#define SPIF_DUMMY_BYTE 0xA5
-
-#define SPIF_CMD_READSFDP 0x5A
-#define SPIF_CMD_ID 0x90
-#define SPIF_CMD_JEDECID 0x9F
-#define SPIF_CMD_UNIQUEID 0x4B
-#define SPIF_CMD_WRITEDISABLE 0x04
-#define SPIF_CMD_READSTATUS1 0x05
-#define SPIF_CMD_READSTATUS2 0x35
-#define SPIF_CMD_READSTATUS3 0x15
-#define SPIF_CMD_WRITESTATUSEN 0x50
-#define SPIF_CMD_WRITESTATUS1 0x01
-#define SPIF_CMD_WRITESTATUS2 0x31
-#define SPIF_CMD_WRITESTATUS3 0x11
-#define SPIF_CMD_WRITEENABLE 0x06
-#define SPIF_CMD_ADDR4BYTE_EN 0xB7
-#define SPIF_CMD_ADDR4BYTE_DIS 0xE9
-#define SPIF_CMD_PAGEPROG3ADD 0x02
-#define SPIF_CMD_PAGEPROG4ADD 0x12
-#define SPIF_CMD_READDATA3ADD 0x03
-#define SPIF_CMD_READDATA4ADD 0x13
-#define SPIF_CMD_FASTREAD3ADD 0x0B
-#define SPIF_CMD_FASTREAD4ADD 0x0C
-#define SPIF_CMD_SECTORERASE3ADD 0x20
-#define SPIF_CMD_SECTORERASE4ADD 0x21
-#define SPIF_CMD_BLOCKERASE3ADD 0xD8
-#define SPIF_CMD_BLOCKERASE4ADD 0xDC
-#define SPIF_CMD_CHIPERASE1 0x60
-#define SPIF_CMD_CHIPERASE2 0xC7
-#define SPIF_CMD_SUSPEND 0x75
-#define SPIF_CMD_RESUME 0x7A
-#define SPIF_CMD_POWERDOWN 0xB9
-#define SPIF_CMD_RELEASE 0xAB
-#define SPIF_CMD_FRAMSERNO 0xC3
-
-#define SPIF_STATUS1_BUSY (1 << 0)
-#define SPIF_STATUS1_WEL (1 << 1)
-#define SPIF_STATUS1_BP0 (1 << 2)
-#define SPIF_STATUS1_BP1 (1 << 3)
-#define SPIF_STATUS1_BP2 (1 << 4)
-#define SPIF_STATUS1_TP (1 << 5)
-#define SPIF_STATUS1_SEC (1 << 6)
-#define SPIF_STATUS1_SRP0 (1 << 7)
-
-#define SPIF_STATUS2_SRP1 (1 << 0)
-#define SPIF_STATUS2_QE (1 << 1)
-#define SPIF_STATUS2_RESERVE1 (1 << 2)
-#define SPIF_STATUS2_LB0 (1 << 3)
-#define SPIF_STATUS2_LB1 (1 << 4)
-#define SPIF_STATUS2_LB2 (1 << 5)
-#define SPIF_STATUS2_CMP (1 << 6)
-#define SPIF_STATUS2_SUS (1 << 7)
-
-#define SPIF_STATUS3_RESERVE1 (1 << 0)
-#define SPIF_STATUS3_RESERVE2 (1 << 1)
-#define SPIF_STATUS3_WPS (1 << 2)
-#define SPIF_STATUS3_RESERVE3 (1 << 3)
-#define SPIF_STATUS3_RESERVE4 (1 << 4)
-#define SPIF_STATUS3_DRV0 (1 << 5)
-#define SPIF_STATUS3_DRV1 (1 << 6)
-#define SPIF_STATUS3_HOLD (1 << 7)
-
+  #include "spif_compat_w25xx.h"
 #elif (SPIF_COMPAT == SPIF_COMPAT_IS25XX)
-
-#define SPIF_DUMMY_BYTE 0xA5 //TODO: confirm value
-
-#define SPIF_CMD_READDATA3ADD 0x03
-#define SPIF_CMD_READDATA4ADD 0x13
-#define SPIF_CMD_FASTREAD 0x0B
-#define SPIF_CMD_FASTREAD4ADD 0x0C
-#define SPIF_CMD_FASTREADDUALIO 0xBB
-#define SPIF_CMD_FASTREADDUALIO4ADD 0xBC
-#define SPIF_CMD_FASTREADDUALOUTPUT 0x3B
-#define SPIF_CMD_FASTREADDUALOUTPUT4ADD 0x3C
-#define SPIF_CMD_FASTREADQUADIO 0xEB
-#define SPIF_CMD_FASTREADQUADIO4ADD 0xEC
-#define SPIF_CMD_FASTREADQUADOUTPUT 0x6B
-#define SPIF_CMD_FASTREADQUADOUTPUT4ADD 0x6C
-#define SPIF_CMD_FASTREADDTRIO 0x0D
-#define SPIF_CMD_FASTREADDTRIO4ADD 0x0E
-#define SPIF_CMD_FASTREADDTRIOIO 0xBD
-#define SPIF_CMD_FASTREADDTRIOIO4ADD 0xBE
-#define SPIF_CMD_FASTREADQUADDTRIO 0xED
-#define SPIF_CMD_FASTREADQUADDTRIO4ADD 0xEE
-#define SPIF_CMD_PAGEPROG3ADD 0x02
-#define SPIF_CMD_PAGEPROG4ADD 0x12
-#define SPIF_CMD_QUADPAGEPROGRAM 0x32
-#define SPIF_CMD_QUADPAGEPROGRAM4ADD 0x34
-#define SPIF_CMD_SECTORERASE3ADD 0x20
-#define SPIF_CMD_SECTORERASE4ADD 0x21
-#define SPIF_CMD_BLOCKERASE32K 0x52
-#define SPIF_CMD_BLOCKERASE32K4ADD 0x5C
-#define SPIF_CMD_BLOCKERASE64K 0xD8
-#define SPIF_CMD_BLOCKERASE64K4ADD 0xDC
-#define SPIF_CMD_CHIPERASE1 0xC7
-#define SPIF_CMD_WRITEENABLE 0x06
-#define SPIF_CMD_WRITEDISABLE 0x04
-#define SPIF_CMD_READSTATUS1 0x05
-#define SPIF_CMD_WRITESTATUS1 0x01
-#define SPIF_CMD_READFNREG 0x48
-#define SPIF_CMD_WRITEFNREG 0x42
-#define SPIF_CMD_ENTERQPI 0x35
-#define SPIF_CMD_EXITQPI 0xF5
-#define SPIF_CMD_SUSPEND 0x75
-#define SPIF_CMD_RESUME 0x7A
-#define SPIF_CMD_DEEPPOWERDOWN 0xB9
-#define SPIF_CMD_READID 0xAB
-#define SPIF_CMD_RELEASEPOWERDOWN 0xAB
-#define SPIF_CMD_SETREADPARAMNONVOLATILE 0x65
-#define SPIF_CMD_SETREADPARAMVOLATILE 0xC0
-#define SPIF_CMD_SETEXTENDEDREADPARAMNONVOLATILE 0x85
-#define SPIF_CMD_SETEXTEDEDREADPARAMVOLATILE 0x83
-#define SPIF_CMD_READREADPARAMVOLATILE 0x61 
-#define SPIF_CMD_READREADEXTENDEDPARAMVOLATILE 0x81
-#define SPIF_CMD_CLEAREXTENDEDREADREG 0x82
-#define SPIF_CMD_JEDECID 0x9F
-#define SPIF_CMD_READMANUFACTURERID 0x90
-#define SPIF_CMD_READJEDECIDQPI 0xAF
-#define SPIF_CMD_READUNIQUEID 0x4B
-#define SPIF_CMD_READSFDP 0x5A
-#define SPIF_CMD_NOOP 0x00
-#define SPIF_CMD_SOFTRESETENABLE 0x66
-#define SPIF_CMD_SOFTRESET 0x99
-#define SPIF_CMD_ERASEINFOROW 0x64
-#define SPIF_CMD_PROGRAMINFOROW 0x62
-#define SPIF_CMD_READINFOROW 0x68
-#define SPIF_CMD_SECTORUNLOCK 0x26
-#define SPIF_CMD_SECTORUNLOCK4ADD 0x25
-#define SPIF_CMD_SECTORLOCK 0x24
-#define SPIF_CMD_READAUTOBOOTREG 0x14
-#define SPIF_CMD_WRITEAUTOBOOTREG 0x15
-#define SPIF_CMD_READBANKADDRESSREG 0x16
-#define SPIF_CMD_WRITEBANKADDRESSREGVOLATILE 0x17
-#define SPIF_CMD_WRITEBANKADDRESSREGNONVOLATILE 0x18
-#define SPIF_CMD_ENTER4ADD 0xB7
-#define SPIF_CMD_EXIT4ADD 0x29
-#define SPIF_CMD_READDYB 0xFA
-#define SPIF_CMD_READDYB4ADD 0xE0
-#define SPIF_CMD_WRITEDYB 0xFB
-#define SPIF_CMD_WRITEDYB4ADD 0xE1
-#define SPIF_CMD_READPPB 0xFC
-#define SPIF_CMD_READPPB4ADD 0xE2
-#define SPIF_CMD_PROGPPB 0xFD
-#define SPIF_CMD_PROGPPB4ADD 0xE3
-#define SPIF_CMD_ERASEPPB 0xE4
-#define SPIF_CMD_READASP 0x2B
-#define SPIF_CMD_PROGRMASP 0x2F
-#define SPIF_CMD_READPPBLOCKBIT 0xA7
-#define SPIF_CMD_WRITEPPBLOCKBIT 0xA6
-#define SPIF_CMD_SETFREEZEBIT 0x91
-#define SPIF_CMD_READPASSWORD 0xE7
-#define SPIF_CMD_PROGRAMPASSWORD 0xE8
-#define SPIF_CMD_UNLOCKPASSWORD 0xE9
-#define SPIF_CMD_SETALLDYBBITS 0x7E
-#define SPIF_CMD_CLEARALLDYBBITS 0x98
-
-/*status register definitions*/
-#define SPIF_STATUS_WIP (1 << 0)
-#define SPIF_STATUS_WEL (1 << 1)
-#define SPIF_STATUS_BP0 (1 << 2)
-#define SPIF_STATUS_BP1 (1 << 3)
-#define SPIF_STATUS_BP2 (1 << 4)
-#define SPIF_STATUS_BP3 (1 << 5)
-#define SPIF_STATUS_QE (1 << 6)
-#define SPIF_STATUS_SRWD (1 << 7)
-
-/*Function Register definitions*/
-#define SPIF_FNREG_DEDICATEDRESET (1 << 0)
-#define SPIF_FNREG_TBS (1 << 1)
-#define SPIF_FNREG_PSUS (1 << 2)
-#define SPIF_FNREG_ESUS (1 << 3)
-#define SPIF_FNREG_IRLOCK0 (1 << 4)
-#define SPIF_FNREG_IRLOCK1 (1 << 5)
-#define SPIF_FNREG_IRLOCK2 (1 << 6)
-#define SPIF_FNREG_IRLOCK3 (1 << 7)
-
-/*Read Register definitons*/
-#define SPIF_READREG_BURSTLEN0 (1 << 0)
-#define SPIF_READREG_BURSTLEN1 (1 << 1)
-#define SPIF_READREG_BURSTLENENABLE (1 << 2)
-#define SPIF_READREG_DUMMYCYCLES0 (1 << 3)
-#define SPIF_READREG_DUMMYCYCLES1 (1 << 4)
-#define SPIF_READREG_DUMMYCYCLES2 (1 << 5)
-#define SPIF_READREG_DUMMYCYCLES3 (1 << 6)
-#define SPIF_READREG_HOLD_RESET (1 << 7)
-
-/*Extended Read Register definitions*/
-#define SPIF_EXTENDEDREADREG_WIP (1 << 0)
-#define SPIF_EXTENDEDREADREG_PROT_E (1 << 1)
-#define SPIF_EXTENDEDREADREG_P_ERR (1 << 2)
-#define SPIF_EXTENDEDREADREG_E_ERR (1 << 3)
-// bit 4 is reserved
-#define SPIF_EXTENDEDREADREG_ODS0 (1 << 5)
-#define SPIF_EXTENDEDREADREG_ODS1 (1 << 6)
-#define SPIF_EXTENDEDREADREG_ODS2 (1 << 7)
-
-/* AutoBoot Register definitions */
-#define SPIF_AUTOBootREG_ABSA      (0xFFFFFFE0)  // Bits AB[31:5] - AutoBoot Start Address
-#define SPIF_AUTOBootREG_ABSD      (0x0000001E)  // Bits AB[4:1]  - AutoBoot Start Delay
-#define SPIF_AUTOBootREG_ABE       (1 << 0)      // Bit  AB[0]    - AutoBoot Enable
-
-/* Bank Address Register*/
-#define SPIF_BANKADDRESSREG_EXTADD (1 << 7) //3-byte or 4-byte addressing selection Bit 
-//other bits are all reserved
-
-/* Advanced Sector/Block Protection Register (ASPR) definitions */
-// bit 0 is reserved
-#define SPIF_ASPR_PSTMLB   (1 << 1)  // Persistent Protection Mode Lock Bit
-#define SPIF_ASPR_PWDMLB   (1 << 2)  // Password Protection Mode Lock Bit
-//bit 3 to 14 are reserved
-#define SPIF_ASPR_TBPARM   (1 << 15) // Top/Bottom Parameter Sector 
-
-/*Password Register*/
-// TODO: define the password register bits
-
-/*PPB Lock Register*/
-#define SPIF_PPBLOCKREG_PPBLOCK (1 << 0) //PPB Lock Bit 
-//bit 1 to 6 are reserved
-#define SPIF_PPBLOCKREG_FREEZE (1 << 7) 
-
-/*PPB Register*/
-//TODO: confirm if need this definition
-
-/*DYB register*/
-//TODO: confirm if need this definition
-
+  #include "spif_compat_is25xx.h"
 #endif
 
-/************************************************************************************************************
-**************    Private Functions
-************************************************************************************************************/
+#if (SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI)
+  #include "spif_interface_octospi.h"
+#else
+  #include "spif_interface_spi.h"
+#endif
 
-void     SPIF_Delay(uint32_t Delay);
-void     SPIF_Lock(SPIF_HandleTypeDef *Handle);
-void     SPIF_UnLock(SPIF_HandleTypeDef *Handle);
-void     SPIF_CsPin(SPIF_HandleTypeDef *Handle, bool Select);
-bool     SPIF_TransmitReceive(SPIF_HandleTypeDef *Handle, uint8_t *Tx, uint8_t *Rx, size_t Size, uint32_t Timeout);
-bool     SPIF_Transmit(SPIF_HandleTypeDef *Handle, uint8_t *Tx, size_t Size, uint32_t Timeout);
-bool     SPIF_Receive(SPIF_HandleTypeDef *Handle, uint8_t *Rx, size_t Size, uint32_t Timeout);
-bool     SPIF_WriteEnable(SPIF_HandleTypeDef *Handle);
-bool     SPIF_WriteDisable(SPIF_HandleTypeDef *Handle);
-uint8_t  SPIF_ReadReg1(SPIF_HandleTypeDef *Handle);
-uint8_t  SPIF_ReadReg2(SPIF_HandleTypeDef *Handle);
-uint8_t  SPIF_ReadReg3(SPIF_HandleTypeDef *Handle);
-bool     SPIF_WriteReg1(SPIF_HandleTypeDef *Handle, uint8_t Data);
-bool     SPIF_WriteReg2(SPIF_HandleTypeDef *Handle, uint8_t Data);
-bool     SPIF_WriteReg3(SPIF_HandleTypeDef *Handle, uint8_t Data);
-bool     SPIF_WaitForWriting(SPIF_HandleTypeDef *Handle, uint32_t Timeout);
-bool     SPIF_FindChip(SPIF_HandleTypeDef *Handle);
-bool     SPIF_WriteFn(SPIF_HandleTypeDef *Handle, uint32_t PageNumber, uint8_t *Data, uint32_t Size, uint32_t Offset);
-bool     SPIF_ReadFn(SPIF_HandleTypeDef *Handle, uint32_t Address, uint8_t *Data, uint32_t Size);
+
 
 /***********************************************************************************************************/
 
@@ -327,197 +81,6 @@ void SPIF_CsPin(SPIF_HandleTypeDef *Handle, bool Select)
 
 /***********************************************************************************************************/
 
-bool SPIF_TransmitReceive(SPIF_HandleTypeDef *Handle, uint8_t *Tx, uint8_t *Rx, size_t Size, uint32_t Timeout)
-{
-  bool retVal = false;
-#if (SPIF_PLATFORM == SPIF_PLATFORM_HAL)
-  if (HAL_SPI_TransmitReceive(Handle->HSpi, Tx, Rx, Size, Timeout) == HAL_OK)
-  {
-    retVal = true;
-  }
-  else
-  {
-    dprintf("SPIF TIMEOUT\r\n");
-  }
-#elif (SPIF_PLATFORM == SPIF_PLATFORM_HAL_DMA)
-  uint32_t startTime = HAL_GetTick();
-  if (HAL_SPI_TransmitReceive_DMA(Handle->HSpi, Tx, Rx, Size) != HAL_OK)
-  {
-    dprintf("SPIF TRANSFER ERROR\r\n");
-  }
-  else
-  {
-    while (1)
-    {
-      SPIF_Delay(1);
-      if (HAL_GetTick() - startTime >= Timeout)
-      {
-        dprintf("SPIF TIMEOUT\r\n");
-        HAL_SPI_DMAStop(Handle->HSpi);
-        break;
-      }
-      if (HAL_SPI_GetState(Handle->HSpi) == HAL_SPI_STATE_READY)
-      {
-        retVal = true;
-        break;
-      }
-    }
-  }
-#elif (SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI)
-OSPI_RegularCmdTypeDef sCommand = {0};
-
-// Set up the command to use 4 data lines
-sCommand.OperationType   = HAL_OSPI_OPTYPE_COMMON_CFG;
-sCommand.DataMode        = HAL_OSPI_DATA_4_LINES;  // 4-line data mode
-sCommand.NbData          = Size;  // Set the number of data bytes to transmit/receive
-
-// Prepare the command (this could be any relevant command, like a read or write)
-if (HAL_OSPI_Command(Handle->HOspi, &sCommand, Timeout) != HAL_OK)
-{
-    dprintf("SPIF COMMAND ERROR\r\n");
-    return false;
-}
-  if (HAL_OSPI_TransmitReceive(Handle->HOspi, Tx, Rx, Size, Timeout) == HAL_OK)
-  {
-    retVal = true;
-  }
-  else
-  {
-    dprintf("SPIF TIMEOUT\r\n");
-  }
-#endif
-  return retVal;
-}
-
-/***********************************************************************************************************/
-
-bool SPIF_Transmit(SPIF_HandleTypeDef *Handle, uint8_t *Tx, size_t Size, uint32_t Timeout)
-{
-  bool retVal = false;
-#if (SPIF_PLATFORM == SPIF_PLATFORM_HAL)
-  if (HAL_SPI_Transmit(Handle->HSpi, Tx, Size, Timeout) == HAL_OK)
-  {
-    retVal = true;
-  }
-  else
-  {
-    dprintf("SPIF TIMEOUT\r\n");
-  }
-#elif (SPIF_PLATFORM == SPIF_PLATFORM_HAL_DMA)
-  uint32_t startTime = HAL_GetTick();
-  if (HAL_SPI_Transmit_DMA(Handle->HSpi, Tx, Size) != HAL_OK)
-  {
-    dprintf("SPIF TRANSFER ERROR\r\n");
-  }
-  else
-  {
-    while (1)
-    {
-      SPIF_Delay(1);
-      if (HAL_GetTick() - startTime >= Timeout)
-      {
-        dprintf("SPIF TIMEOUT\r\n");
-        HAL_SPI_DMAStop(Handle->HSpi);
-        break;
-      }
-      if (HAL_SPI_GetState(Handle->HSpi) == HAL_SPI_STATE_READY)
-      {
-        retVal = true;
-        break;
-      }
-    }
-  }
-#elif (SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI)
-OSPI_RegularCmdTypeDef sCommand = {0};
-sCommand.OperationType = HAL_OSPI_OPTYPE_COMMON_CFG;
-sCommand.DataMode = HAL_OSPI_DATA_4_LINES;  // Set to 4 data lines
-sCommand.NbData = Size;
-
-// Send the command to prepare for the transmission
-if (HAL_OSPI_Command(Handle->HOspi, &sCommand, Timeout) != HAL_OK)
-{
-    dprintf("SPIF COMMAND ERROR\r\n");
-    return false;
-}
-
-  if (HAL_OSPI_Transmit(Handle->HOspi, Tx, Timeout) == HAL_OK)
-  {
-    retVal = true;
-  }
-  else
-  {
-    dprintf("SPIF TIMEOUT\r\n");
-  }
-#endif
-  return retVal;
-}
-
-/***********************************************************************************************************/
-
-bool SPIF_Receive(SPIF_HandleTypeDef *Handle, uint8_t *Rx, size_t Size, uint32_t Timeout)
-{
-  bool retVal = false;
-#if (SPIF_PLATFORM == SPIF_PLATFORM_HAL)
-  if (HAL_SPI_Receive(Handle->HSpi, Rx, Size, Timeout) == HAL_OK)
-  {
-    retVal = true;
-  }
-  else
-  {
-    dprintf("SPIF TIMEOUT\r\n");
-  }
-#elif (SPIF_PLATFORM == SPIF_PLATFORM_HAL_DMA)
-  uint32_t startTime = HAL_GetTick();
-  if (HAL_SPI_Receive_DMA(Handle->HSpi, Rx, Size) != HAL_OK)
-  {
-    dprintf("SPIF TRANSFER ERROR\r\n");
-  }
-  else
-  {
-    while (1)
-    {
-      SPIF_Delay(1);
-      if (HAL_GetTick() - startTime >= Timeout)
-      {
-        dprintf("SPIF TIMEOUT\r\n");
-        HAL_SPI_DMAStop(Handle->HSpi);
-        break;
-      }
-      if (HAL_SPI_GetState(Handle->HSpi) == HAL_SPI_STATE_READY)
-      {
-        retVal = true;
-        break;
-      }
-    }
-  }
-#elif (SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI)
-  OSPI_RegularCmdTypeDef sCommand = {0};
-
-  // Set up the command for receiving data with 4 data lines
-  sCommand.OperationType   = HAL_OSPI_OPTYPE_COMMON_CFG;
-  sCommand.DataMode        = HAL_OSPI_DATA_4_LINES;  // Set to 4-line data mode
-  sCommand.NbData          = Size;  // Number of data bytes to receive
-
-  if (HAL_OSPI_Command(Handle->HOspi, &sCommand, Timeout) != HAL_OK)
-  {
-    dprintf("SPIF COMMAND ERROR\r\n");
-    return false;
-  }
-
-  if (HAL_OSPI_Receive(Handle->HOspi, Rx,  Timeout) == HAL_OK)
-  {
-    retVal = true;
-  }
-  else
-  {
-    dprintf("SPIF TIMEOUT\r\n");
-  } 
-#endif
-  return retVal;
-}
-
-/***********************************************************************************************************/
-
 bool SPIF_WriteEnable(SPIF_HandleTypeDef *Handle)
 {
   bool retVal = true;
@@ -549,182 +112,6 @@ bool SPIF_WriteDisable(SPIF_HandleTypeDef *Handle)
 }
 
 /***********************************************************************************************************/
-// This reads status register 1 for SPIF_COMPAT_W25XX
-// This will also read the only status register for SPIF_COMPAT_IS25XX
-uint8_t SPIF_ReadReg1(SPIF_HandleTypeDef *Handle)
-{
-  uint8_t retVal = 0;
-  uint8_t tx[2] = {SPIF_CMD_READSTATUS1, SPIF_DUMMY_BYTE};
-  uint8_t rx[2];
-  SPIF_CsPin(Handle, 0);
-  if (SPIF_TransmitReceive(Handle, tx, rx, 2, 100) == true)
-  {
-    retVal = rx[1];
-  }
-  SPIF_CsPin(Handle, 1);
-  return retVal;
-}
-
-/***********************************************************************************************************/
-
-uint8_t SPIF_ReadReg2(SPIF_HandleTypeDef *Handle)
-{
-  #if (SPIF_COMPAT == SPIF_COMPAT_W25XX)
-
-  uint8_t retVal = 0;
-  uint8_t tx[2] = {SPIF_CMD_READSTATUS2, SPIF_DUMMY_BYTE};
-  uint8_t rx[2];
-  SPIF_CsPin(Handle, 0);
-  if (SPIF_TransmitReceive(Handle, tx, rx, 2, 100) == true)
-  {
-    retVal = rx[1];
-  }
-  SPIF_CsPin(Handle, 1);
-  return retVal;
-  #elif (SPIF_COMPAT == SPIF_COMPAT_IS25XX)
-    dprintf("SPIF_ReadReg2() not supported\r\n");
-    return 0;
-  #endif
-}
-
-/***********************************************************************************************************/
-
-uint8_t SPIF_ReadReg3(SPIF_HandleTypeDef *Handle)
-{
-  #if (SPIF_COMPAT == SPIF_COMPAT_W25XX)
-  
-  uint8_t retVal = 0;
-  uint8_t tx[2] = {SPIF_CMD_READSTATUS3, SPIF_DUMMY_BYTE};
-  uint8_t rx[2];
-  SPIF_CsPin(Handle, 0);
-  if (SPIF_TransmitReceive(Handle, tx, rx, 2, 100) == true)
-  {
-    retVal = rx[1];
-  }
-  SPIF_CsPin(Handle, 1);
-  return retVal;
-  #elif (SPIF_COMPAT == SPIF_COMPAT_IS25XX)
-    dprintf("SPIF_ReadReg3() not supported\r\n");
-    return 0;
-  #endif
-}
-
-/***********************************************************************************************************/
-
-bool SPIF_WriteReg1(SPIF_HandleTypeDef *Handle, uint8_t Data)
-{
-  bool retVal = true;
-  uint8_t tx[2] = {SPIF_CMD_WRITESTATUS1, Data};
-
-  #if (SPIF_COMPAT == SPIF_COMPAT_W25XX)
-  uint8_t cmd = SPIF_CMD_WRITESTATUSEN;
-  #endif
-  do
-  {
-    #if (SPIF_COMPAT == SPIF_COMPAT_W25XX)
-    
-    SPIF_CsPin(Handle, 0);
-    if (SPIF_Transmit(Handle, &cmd, 1, 100) == false)
-    {
-      retVal = false;
-      SPIF_CsPin(Handle, 1);
-      break;
-    }
-    SPIF_CsPin(Handle, 1);
-
-    #elif (SPIF_COMPAT == SPIF_COMPAT_IS25XX)
-    if (SPIF_WriteEnable(Handle) == false){
-      retVal = false;
-      break;
-    }
-    #endif
-
-    SPIF_CsPin(Handle, 0);
-    if (SPIF_Transmit(Handle, tx, 2, 100) == false)
-    {
-      retVal = false;
-      SPIF_CsPin(Handle, 1);
-      break;
-    }
-    SPIF_CsPin(Handle, 1);
-  } while (0);
-
-  return retVal;
-}
-
-/***********************************************************************************************************/
-
-bool SPIF_WriteReg2(SPIF_HandleTypeDef *Handle, uint8_t Data)
-{
-  #if (SPIF_COMPAT == SPIF_COMPAT_W25XX)
-  
-  bool retVal = true;
-  uint8_t tx[2] = {SPIF_CMD_WRITESTATUS2, Data};
-  uint8_t cmd = SPIF_CMD_WRITESTATUSEN;
-  do
-  {
-    SPIF_CsPin(Handle, 0);
-    if (SPIF_Transmit(Handle, &cmd, 1, 100) == false)
-    {
-      retVal = false;
-      SPIF_CsPin(Handle, 1);
-      break;
-    }
-    SPIF_CsPin(Handle, 1);
-    SPIF_CsPin(Handle, 0);
-    if (SPIF_Transmit(Handle, tx, 2, 100) == false)
-    {
-      retVal = false;
-      SPIF_CsPin(Handle, 1);
-      break;
-    }
-    SPIF_CsPin(Handle, 1);
-  } while (0);
-
-  return retVal;
-  #elif (SPIF_COMPAT == SPIF_COMPAT_IS25XX)
-    dprintf("SPIF_WriteReg2() not supported\r\n");
-    return false;
-  #endif
-}
-
-/***********************************************************************************************************/
-
-bool SPIF_WriteReg3(SPIF_HandleTypeDef *Handle, uint8_t Data)
-{
-  #if (SPIF_COMPAT == SPIF_COMPAT_W25XX)
-
-  bool retVal = true;
-  uint8_t tx[2] = {SPIF_CMD_WRITESTATUS3, Data};
-  uint8_t cmd = SPIF_CMD_WRITESTATUSEN;
-  do
-  {
-    SPIF_CsPin(Handle, 0);
-    if (SPIF_Transmit(Handle, &cmd, 1, 100) == false)
-    {
-      retVal = false;
-      SPIF_CsPin(Handle, 1);
-      break;
-    }
-    SPIF_CsPin(Handle, 1);
-    SPIF_CsPin(Handle, 0);
-    if (SPIF_Transmit(Handle, tx, 2, 100) == false)
-    {
-      retVal = false;
-      SPIF_CsPin(Handle, 1);
-      break;
-    }
-    SPIF_CsPin(Handle, 1);
-  } while (0);
-
-  return retVal;
-  #elif (SPIF_COMPAT == SPIF_COMPAT_IS25XX)
-    dprintf("SPIF_WriteReg3() not supported\r\n");
-    return false;
-  #endif
-}
-
-/***********************************************************************************************************/
 
 bool SPIF_WaitForWriting(SPIF_HandleTypeDef *Handle, uint32_t Timeout)
 {
@@ -739,9 +126,9 @@ bool SPIF_WaitForWriting(SPIF_HandleTypeDef *Handle, uint32_t Timeout)
       break;
     }
     #if (SPIF_COMPAT == SPIF_COMPAT_W25XX)
-    if ((SPIF_ReadReg1(Handle) & SPIF_STATUS1_BUSY) == 0)
+    if ((SPIF_W25XX_ReadReg1(Handle) & SPIF_STATUS1_BUSY) == 0)
     #elif (SPIF_COMPAT == SPIF_COMPAT_IS25XX)
-    if ((SPIF_ReadReg1(Handle) & SPIF_STATUS_WIP) == 0)
+    if ((SPIF_IS25_ReadReg1(Handle) & SPIF_STATUS_WIP) == 0)
     #endif
     {
       retVal = true;
@@ -893,6 +280,32 @@ bool SPIF_FindChip(SPIF_HandleTypeDef *Handle)
 
   return retVal;
 }
+
+
+bool SPIF_TransmitReceive(SPIF_HandleTypeDef *Handle, uint8_t *Tx, uint8_t *Rx, size_t Size, uint32_t Timeout){
+#if (SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI)
+	return SPIF_OCTOSPI_TransmitReceive(Handle, Tx, Rx, Size, Timeout);
+#else
+	return SPIF_SPI_TransmitReceive(Handle, Tx, Rx, Size, Timeout);
+#endif
+}
+
+bool SPIF_Transmit(SPIF_HandleTypeDef *Handle, uint8_t *Tx, size_t Size, uint32_t Timeout){
+#if (SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI)
+	return SPIF_OCTOSPI_Transmit(Handle, Tx, Size, Timeout);
+#else
+	return SPIF_SPI_Transmit(Handle, Tx, Size, Timeout);
+#endif
+}
+
+bool SPIF_Receive(SPIF_HandleTypeDef *Handle, uint8_t *Rx, size_t Size, uint32_t Timeout){
+#if (SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI)
+	return SPIF_OCTOSPI_Receive(Handle, Rx, Size, Timeout);
+#else
+	return SPIF_SPI_Receive(Handle, Rx, Size, Timeout);
+#endif
+}
+
 
 /***********************************************************************************************************/
 
@@ -1085,106 +498,6 @@ bool SPIF_ReadFn(SPIF_HandleTypeDef *Handle, uint32_t Address, uint8_t *Data, ui
 /************************************************************************************************************
 **************    Public Functions
 ************************************************************************************************************/
-#if (SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI)
-/**
-  * @brief  Initialize the SPIF.
-  * @note   Enable and configure the OCTOSPI and Set GPIO as output for CS pin on the CubeMX
-  *
-  * @param  *Handle: Pointer to SPIF_HandleTypeDef structure
-  * @param  *HOSpi: Pointer to a OSPI_HandleTypeDef structure
-  * @param  *Gpio: Pointer to a GPIO_TypeDef structure for CS
-  * @param  Pin: Pin of CS
-  *
-  * @retval bool: true or false
-  */
- bool SPIF_OCTOSPI_Init(SPIF_HandleTypeDef *Handle, OSPI_HandleTypeDef *HOspi, GPIO_TypeDef *Gpio, uint16_t Pin)
- {
-   bool retVal = false;
-   do
-   {
-     if ((Handle == NULL) || (HOspi == NULL) || (Gpio == NULL) || (Handle->Inited == 1))
-     {
-       dprintf("SPIF_Init() Error, Wrong Parameter\r\n");
-       break;
-     }
-     memset(Handle, 0, sizeof(SPIF_HandleTypeDef));
-     Handle->HOspi = HOspi;
-     Handle->Gpio = Gpio;
-     Handle->Pin = Pin;
-     SPIF_CsPin(Handle, 1);
-     /* wait for stable VCC */
-     while (HAL_GetTick() < 20)
-     {
-       SPIF_Delay(1);
-     }
-     if (SPIF_WriteDisable(Handle) == false)
-     {
-       break;
-     }
-     retVal = SPIF_FindChip(Handle);
-     if (retVal)
-     {
-       Handle->Inited = 1;
-       dprintf("SPIF_OCTOSPI_Init() Done\r\n");
-     }
- 
-   } while (0);
- 
-   return retVal;
- }
- 
-#else
-
-/**
-  * @brief  Initialize the SPIF.
-  * @note   Enable and configure the SPI and Set GPIO as output for CS pin on the CubeMX
-  *
-  * @param  *Handle: Pointer to SPIF_HandleTypeDef structure
-  * @param  *HSpi: Pointer to a SPI_HandleTypeDef structure
-  * @param  *Gpio: Pointer to a GPIO_TypeDef structure for CS
-  * @param  Pin: Pin of CS
-  *
-  * @retval bool: true or false
-  */
-bool SPIF_Init(SPIF_HandleTypeDef *Handle, SPI_HandleTypeDef *HSpi, GPIO_TypeDef *Gpio, uint16_t Pin)
-{
-  bool retVal = false;
-  do
-  {
-    if ((Handle == NULL) || (HSpi == NULL) || (Gpio == NULL) || (Handle->Inited == 1))
-    {
-      dprintf("SPIF_Init() Error, Wrong Parameter\r\n");
-      break;
-    }
-    memset(Handle, 0, sizeof(SPIF_HandleTypeDef));
-    Handle->HSpi = HSpi;
-    Handle->Gpio = Gpio;
-    Handle->Pin = Pin;
-    SPIF_CsPin(Handle, 1);
-    /* wait for stable VCC */
-    while (HAL_GetTick() < 20)
-    {
-      SPIF_Delay(1);
-    }
-    if (SPIF_WriteDisable(Handle) == false)
-    {
-      break;
-    }
-    retVal = SPIF_FindChip(Handle);
-    if (retVal)
-    {
-      Handle->Inited = 1;
-      dprintf("SPIF_Init() Done\r\n");
-    }
-
-  } while (0);
-
-  return retVal;
-}
-
-#endif
-
-/***********************************************************************************************************/
 
 /**
   * @brief  Full Erase chip.
@@ -1291,78 +604,6 @@ bool SPIF_EraseSector(SPIF_HandleTypeDef *Handle, uint32_t Sector)
     if (SPIF_WaitForWriting(Handle, 1000))
     {
       dprintf("SPIF_EraseSector() DONE AFTER %ld ms\r\n", HAL_GetTick() - dbgTime);
-      retVal = true;
-    }
-
-  } while (0);
-
-  SPIF_WriteDisable(Handle);
-  SPIF_UnLock(Handle);
-  return retVal;
-}
-
-/***********************************************************************************************************/
-
-/**
-  * @brief  Erase Block.
-  * @note   Send the Erase-Block command and wait for completion
-  *
-  * @param  *Handle: Pointer to SPIF_HandleTypeDef structure
-  * @param  Sector: Selected Block
-  *
-  * @retval bool: true or false
-  */
-bool SPIF_EraseBlock(SPIF_HandleTypeDef *Handle, uint32_t Block)
-{
-  SPIF_Lock(Handle);
-  bool retVal = false;
-  uint32_t address = Block * SPIF_BLOCK_SIZE;
-  uint8_t tx[5];
-  do
-  {
-#if SPIF_DEBUG != SPIF_DEBUG_DISABLE
-    uint32_t dbgTime = HAL_GetTick();
-#endif
-    dprintf("SPIF_EraseBlock() START PAGE %ld\r\n", Block);
-    if (Block >= Handle->BlockCnt)
-    {
-      dprintf("SPIF_EraseBlock() ERROR Block NUMBER\r\n");
-      break;
-    }
-    if (SPIF_WriteEnable(Handle) == false)
-    {
-      break;
-    }
-    SPIF_CsPin(Handle, 0);
-    if (Handle->BlockCnt >= 512)
-    {
-      tx[0] = SPIF_CMD_BLOCKERASE4ADD;
-      tx[1] = (address & 0xFF000000) >> 24;
-      tx[2] = (address & 0x00FF0000) >> 16;
-      tx[3] = (address & 0x0000FF00) >> 8;
-      tx[4] = (address & 0x000000FF);
-      if (SPIF_Transmit(Handle, tx, 5, 100) == false)
-      {
-        SPIF_CsPin(Handle, 1);
-        break;
-      }
-    }
-    else
-    {
-      tx[0] = SPIF_CMD_BLOCKERASE3ADD;
-      tx[1] = (address & 0x00FF0000) >> 16;
-      tx[2] = (address & 0x0000FF00) >> 8;
-      tx[3] = (address & 0x000000FF);
-      if (SPIF_Transmit(Handle, tx, 4, 100) == false)
-      {
-        SPIF_CsPin(Handle, 1);
-        break;
-      }
-    }
-    SPIF_CsPin(Handle, 1);
-    if (SPIF_WaitForWriting(Handle, 3000))
-    {
-      dprintf("SPIF_EraseBlock() DONE AFTER %ld ms\r\n", HAL_GetTick() - dbgTime);
       retVal = true;
     }
 
