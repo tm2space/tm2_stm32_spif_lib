@@ -1,8 +1,7 @@
 #include "spif_interface_octospi.h"
 #include "spif.h"
-#include "ospi.h"
-#include "NimaLTD.I-CUBE-SPIF_conf.h"
 
+#if (SPIF_INTERFACE == SPIF_INTERFACE_OCTOSPI)
 /**
  * @brief  Initialize the SPIF.
  * @note   Enable and configure the SPI and Set GPIO as output for CS pin on the CubeMX
@@ -14,44 +13,44 @@
  *
  * @retval bool: true or false
  */
-bool SPIF_OCTOSPI_Init(SPIF_HandleTypeDef *Handle, OSPI_HandleTypeDef *HOspi, GPIO_TypeDef *Gpio, uint16_t Pin){
-    
-   bool retVal = false;
-   do
-   {
-     if ((Handle == NULL) || (HOspi == NULL) || (Gpio == NULL) || (Handle->Inited == 1))
-     {
-       dprintf("SPIF_Init() Error, Wrong Parameter\r\n");
-       break;
-     }
-     memset(Handle, 0, sizeof(SPIF_HandleTypeDef));
-     Handle->interface = HOspi;
-     Handle->Gpio = Gpio;
-     Handle->Pin = Pin;
-     SPIF_CsPin(Handle, 1);
-     /* wait for stable VCC */
-     while (HAL_GetTick() < 20)
-     {
-       SPIF_Delay(1);
-     }
-     if (SPIF_WriteDisable(Handle) == false)
-     {
-       break;
-     }
-     retVal = SPIF_FindChip(Handle);
-     if (retVal)
-     {
-       Handle->Inited = 1;
-       dprintf("SPIF_Init() Done\r\n");
-     }
- 
-   } while (0);
- 
-   return retVal;
-}
+//bool SPIF_OCTOSPI_Init(SPIF_HandleTypeDef *Handle, OSPI_HandleTypeDef *HOspi, GPIO_TypeDef *Gpio, uint16_t Pin){
+//
+//   bool retVal = false;
+//   do
+//   {
+//     if ((Handle == NULL) || (HOspi == NULL) || (Gpio == NULL) || (Handle->Inited == 1))
+//     {
+//       dprintf("SPIF_Init() Error, Wrong Parameter\r\n");
+//       break;
+//     }
+//     memset(Handle, 0, sizeof(SPIF_HandleTypeDef));
+//     Handle->interface = HOspi;
+//     Handle->Gpio = Gpio;
+//     Handle->Pin = Pin;
+//     SPIF_CsPin(Handle, 1);
+//     /* wait for stable VCC */
+//     while (HAL_GetTick() < 20)
+//     {
+//       SPIF_Delay(1);
+//     }
+//     if (SPIF_WriteDisable(Handle) == false)
+//     {
+//       break;
+//     }
+//     retVal = SPIF_FindChip(Handle);
+//     if (retVal)
+//     {
+//       Handle->Inited = 1;
+//       dprintf("SPIF_Init() Done\r\n");
+//     }
+//
+//   } while (0);
+//
+//   return retVal;
+//}
 
 
-bool SPIF_OCTOSPI_TransmitReceive(SPIF_HandleTypeDef *Handle, uint8_t *Tx, uint8_t *Rx, size_t Size, uint32_t Timeout){
+bool SPIF_TransmitReceive(SPIF_HandleTypeDef *Handle, uint8_t *Tx, uint8_t *Rx, size_t Size, uint32_t Timeout){
     
   bool retVal = false;
 OSPI_RegularCmdTypeDef sCommand = {0};
@@ -80,7 +79,7 @@ if (HAL_OSPI_Command(Handle->interface, &sCommand, Timeout) != HAL_OK)
 }
 
 
-bool SPIF_OCTOSPI_Transmit(SPIF_HandleTypeDef *Handle, uint8_t *Tx, size_t Size, uint32_t Timeout){
+bool SPIF_Transmit(SPIF_HandleTypeDef *Handle, uint8_t *Tx, size_t Size, uint32_t Timeout){
     
   bool retVal = false;
 OSPI_RegularCmdTypeDef sCommand = {0};
@@ -107,7 +106,7 @@ if (HAL_OSPI_Command(Handle->interface, &sCommand, Timeout) != HAL_OK)
 
 }
 
-bool SPIF_OCTOSPI_Receive(SPIF_HandleTypeDef *Handle, uint8_t *Rx, size_t Size, uint32_t Timeout){
+bool SPIF_Receive(SPIF_HandleTypeDef *Handle, uint8_t *Rx, size_t Size, uint32_t Timeout){
     
   bool retVal = false;
   OSPI_RegularCmdTypeDef sCommand = {0};
@@ -134,3 +133,5 @@ bool SPIF_OCTOSPI_Receive(SPIF_HandleTypeDef *Handle, uint8_t *Rx, size_t Size, 
   return retVal;
 
 }
+
+#endif

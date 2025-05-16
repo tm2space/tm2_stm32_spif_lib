@@ -1,6 +1,8 @@
+
 #include "spif_interface_spi.h"
 #include "spif.h"
-#include "NimaLTD.I-CUBE-SPIF_conf.h"
+
+#if(SPIF_INTERFACE == SPIF_INTERFACE_SPI)
 
 /**
  * @brief  Initialize the SPIF.
@@ -13,43 +15,43 @@
  *
  * @retval bool: true or false
  */
-bool SPIF_SPI_Init(SPIF_HandleTypeDef *Handle, SPI_HandleTypeDef *HSpi, GPIO_TypeDef *Gpio, uint16_t Pin)
-{
-    bool retVal = false;
-    do
-    {
-        if ((Handle == NULL) || (HSpi == NULL) || (Gpio == NULL) || (Handle->Inited == 1))
-        {
-            dprintf("SPIF_Init() Error, Wrong Parameter\r\n");
-            break;
-        }
-        memset(Handle, 0, sizeof(SPIF_HandleTypeDef));
-        Handle->interface = HSpi;
-        Handle->Gpio = Gpio;
-        Handle->Pin = Pin;
-        SPIF_CsPin(Handle, 1);
-        /* wait for stable VCC */
-        while (HAL_GetTick() < 20)
-        {
-            SPIF_Delay(1);
-        }
-        if (SPIF_WriteDisable(Handle) == false)
-        {
-            break;
-        }
-        retVal = SPIF_FindChip(Handle);
-        if (retVal)
-        {
-            Handle->Inited = 1;
-            dprintf("SPIF_Init() Done\r\n");
-        }
+//bool SPIF_Init(SPIF_HandleTypeDef *Handle, SPI_HandleTypeDef *HSpi, GPIO_TypeDef *Gpio, uint16_t Pin)
+//{
+//    bool retVal = false;
+//    do
+//    {
+//        if ((Handle == NULL) || (HSpi == NULL) || (Gpio == NULL) || (Handle->Inited == 1))
+//        {
+//            dprintf("SPIF_Init() Error, Wrong Parameter\r\n");
+//            break;
+//        }
+//        memset(Handle, 0, sizeof(SPIF_HandleTypeDef));
+//        Handle->interface = HSpi;
+//        Handle->Gpio = Gpio;
+//        Handle->Pin = Pin;
+//        SPIF_CsPin(Handle, 1);
+//        /* wait for stable VCC */
+//        while (HAL_GetTick() < 20)
+//        {
+//            SPIF_Delay(1);
+//        }
+//        if (SPIF_WriteDisable(Handle) == false)
+//        {
+//            break;
+//        }
+//        retVal = SPIF_FindChip(Handle);
+//        if (retVal)
+//        {
+//            Handle->Inited = 1;
+//            dprintf("SPIF_Init() Done\r\n");
+//        }
+//
+//    } while (0);
+//
+//    return retVal;
+//}
 
-    } while (0);
-
-    return retVal;
-}
-
-bool SPIF_SPI_TransmitReceive(SPIF_HandleTypeDef *Handle, uint8_t *Tx, uint8_t *Rx, size_t Size, uint32_t Timeout)
+bool SPIF_TransmitReceive(SPIF_HandleTypeDef *Handle, uint8_t *Tx, uint8_t *Rx, size_t Size, uint32_t Timeout)
 {
     bool retVal = false;
 #if (SPIF_PLATFORM == SPIF_PLATFORM_HAL)
@@ -89,7 +91,7 @@ bool SPIF_SPI_TransmitReceive(SPIF_HandleTypeDef *Handle, uint8_t *Tx, uint8_t *
     return retVal;
 }
 
-bool SPIF_SPI_Transmit(SPIF_HandleTypeDef *Handle, uint8_t *Tx, size_t Size, uint32_t Timeout)
+bool SPIF_Transmit(SPIF_HandleTypeDef *Handle, uint8_t *Tx, size_t Size, uint32_t Timeout)
 {
 
     bool retVal = false;
@@ -130,7 +132,7 @@ bool SPIF_SPI_Transmit(SPIF_HandleTypeDef *Handle, uint8_t *Tx, size_t Size, uin
     return retVal;
 }
 
-bool SPIF_SPI_Receive(SPIF_HandleTypeDef *Handle, uint8_t *Rx, size_t Size, uint32_t Timeout)
+bool SPIF_Receive(SPIF_HandleTypeDef *Handle, uint8_t *Rx, size_t Size, uint32_t Timeout)
 {
 
     bool retVal = false;
@@ -170,3 +172,5 @@ bool SPIF_SPI_Receive(SPIF_HandleTypeDef *Handle, uint8_t *Rx, size_t Size, uint
 #endif
     return retVal;
 }
+
+#endif
