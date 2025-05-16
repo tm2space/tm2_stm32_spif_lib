@@ -1,68 +1,89 @@
-
 #include "spif_interface_spi.h"
 #include "spif.h"
 
 #if(SPIF_INTERFACE == SPIF_INTERFACE_SPI)
 
-/**
- * @brief  Initialize the SPIF.
- * @note   Enable and configure the SPI and Set GPIO as output for CS pin on the CubeMX
- *
- * @param  *Handle: Pointer to SPIF_HandleTypeDef structure
- * @param  *HSpi: Pointer to a SPI_HandleTypeDef structure
- * @param  *Gpio: Pointer to a GPIO_TypeDef structure for CS
- * @param  Pin: Pin of CS
- *
- * @retval bool: true or false
- */
-//bool SPIF_Init(SPIF_HandleTypeDef *Handle, SPI_HandleTypeDef *HSpi, GPIO_TypeDef *Gpio, uint16_t Pin)
-//{
-//    bool retVal = false;
-//    do
-//    {
-//        if ((Handle == NULL) || (HSpi == NULL) || (Gpio == NULL) || (Handle->Inited == 1))
-//        {
-//            dprintf("SPIF_Init() Error, Wrong Parameter\r\n");
-//            break;
-//        }
-//        memset(Handle, 0, sizeof(SPIF_HandleTypeDef));
-//        Handle->interface = HSpi;
-//        Handle->Gpio = Gpio;
-//        Handle->Pin = Pin;
-//        SPIF_CsPin(Handle, 1);
-//        /* wait for stable VCC */
-//        while (HAL_GetTick() < 20)
-//        {
-//            SPIF_Delay(1);
-//        }
-//        if (SPIF_WriteDisable(Handle) == false)
-//        {
-//            break;
-//        }
-//        retVal = SPIF_FindChip(Handle);
-//        if (retVal)
-//        {
-//            Handle->Inited = 1;
-//            dprintf("SPIF_Init() Done\r\n");
-//        }
-//
-//    } while (0);
-//
-//    return retVal;
-//}
+// Instruction Phase
+bool SPI_SendInstruction(SPIF_HandleTypeDef *Handle, uint32_t Timeout) {
+	bool retVal = false;
+	SPIF_EmulatedPhases *pc = &Handle->phase_config;
 
-bool SPIF_TransmitReceive(SPIF_HandleTypeDef *Handle, uint8_t *Tx, uint8_t *Rx, size_t Size, uint32_t Timeout)
-{
-    bool retVal = false;
+	SPI_HandleTypeDef *hspi = (SPI_HandleTypeDef*) Handle->interface;
+	retVal = HAL_SPI_Transmit(hspi, &pc->instruction, pc->instructionSize,
+			Timeout) == HAL_OK;
+
+	return retVal;
+
+}
+
+// Address Phase
+bool SPI_SendAddress(SPIF_HandleTypeDef *Handle, uint32_t Timeout) {
+	bool retVal = false;
+	SPIF_EmulatedPhases *pc = &Handle->phase_config;
+	uint32_t Address = pc->address;
+	SPI_HandleTypeDef *hspi = (SPI_HandleTypeDef*) Handle->interface;
+	uint8_t addrBytes[4] = { 0 };
+	for (int i = 0; i < pc->addressSize; i++) {
+		addrBytes[i] = (Address >> (8 * i)) & 0xFF;
+	}
+	retVal = HAL_SPI_Transmit(hspi, addrBytes, pc->addressSize, Timeout)
+			== HAL_OK;
+	return retVal;
+}
+
+// Dummy Cycles Phase
+bool SPI_SendDummyCycles(SPIF_HandleTypeDef *Handle, uint32_t Timeout) {
+	SPIF_EmulatedPhases *pc = &Handle->phase_config;
+	if (pc->dummyCycles > 0) {
+		SPI_HandleTypeDef *hspi = (SPI_HandleTypeDef*) Handle->interface;
+		uint8_t dummy = 0x00;
+		for (int i = 0; i < pc->dummyCycles; i++) {
+			if (HAL_SPI_Transmit(hspi, &dummy, 1, Timeout) != HAL_OK) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+
+bool SPIF_TransmitReceive(SPIF_HandleTypeDef *Handle, uint8_t *Tx, uint8_t *Rx,
+		size_t Size, uint32_t Timeout) {
+	bool retVal = false;
+
 #if (SPIF_PLATFORM == SPIF_PLATFORM_HAL)
-    if (HAL_SPI_TransmitReceive(Handle->interface, Tx, Rx, Size, Timeout) == HAL_OK)
-    {
-        retVal = true;
-    }
-    else
-    {
-        dprintf("SPIF TIMEOUT\r\n");
-    }
+	SPI_HandleTypeDef *hspi = (SPI_HandleTypeDef*) Handle->interface;
+	SPIF_EmulatedPhases *pc = &Handle->phase_config;
+
+	if (pc->instructionEnabled) {
+		retVal = SPI_SendInstruction(Handle, Timeout);
+		if (!retVal) {
+			return retVal;
+		}
+	}
+
+	if (pc->addressEnabled) {
+		retVal = SPI_SendAddress(Handle, Timeout);
+		if (!retVal) {
+			return retVal;
+		}
+	}
+
+	if (pc->dummyCycles > 0) {
+		retVal = SPI_SendDummyCycles(Handle, Timeout);
+		if (!retVal) {
+			return retVal;
+		}
+	}
+
+	if (pc->dataEnabled) {
+		if (HAL_SPI_TransmitReceive(hspi, Tx, Rx, Size, Timeout)
+				== HAL_OK) {
+			retVal = true;
+		} else {
+			dprintf("SPIF TIMEOUT\r\n");
+		}
+	}
 #elif (SPIF_PLATFORM == SPIF_PLATFORM_HAL_DMA)
     uint32_t startTime = HAL_GetTick();
     if (HAL_SPI_TransmitReceive_DMA(Handle->interface, Tx, Rx, Size) != HAL_OK)
@@ -88,22 +109,47 @@ bool SPIF_TransmitReceive(SPIF_HandleTypeDef *Handle, uint8_t *Tx, uint8_t *Rx, 
         }
     }
 #endif
-    return retVal;
+	return retVal;
 }
 
-bool SPIF_Transmit(SPIF_HandleTypeDef *Handle, uint8_t *Tx, size_t Size, uint32_t Timeout)
-{
+bool SPIF_Transmit(SPIF_HandleTypeDef *Handle, uint8_t *Tx, size_t Size,
+		uint32_t Timeout) {
 
-    bool retVal = false;
+	bool retVal = false;
+
 #if (SPIF_PLATFORM == SPIF_PLATFORM_HAL)
-    if (HAL_SPI_Transmit(Handle->interface, Tx, Size, Timeout) == HAL_OK)
-    {
-        retVal = true;
-    }
-    else
-    {
-        dprintf("SPIF TIMEOUT\r\n");
-    }
+
+	SPI_HandleTypeDef *hspi = (SPI_HandleTypeDef*) Handle->interface;
+	SPIF_EmulatedPhases *pc = &Handle->phase_config;
+
+	if (pc->instructionEnabled) {
+		retVal = SPI_SendInstruction(Handle, Timeout);
+		if (!retVal) {
+			return retVal;
+		}
+	}
+
+	if (pc->addressEnabled) {
+		retVal = SPI_SendAddress(Handle, Timeout);
+		if (!retVal) {
+			return retVal;
+		}
+	}
+
+	if (pc->dummyCycles > 0) {
+		retVal = SPI_SendDummyCycles(Handle, Timeout);
+		if (!retVal) {
+			return retVal;
+		}
+	}
+
+	if (pc->dataEnabled) {
+		if (HAL_SPI_Transmit(hspi, Tx, Size, Timeout) == HAL_OK) {
+			retVal = true;
+		} else {
+			dprintf("SPIF TIMEOUT\r\n");
+		}
+	}
 #elif (SPIF_PLATFORM == SPIF_PLATFORM_HAL_DMA)
     uint32_t startTime = HAL_GetTick();
     if (HAL_SPI_Transmit_DMA(Handle->interface, Tx, Size) != HAL_OK)
@@ -129,22 +175,43 @@ bool SPIF_Transmit(SPIF_HandleTypeDef *Handle, uint8_t *Tx, size_t Size, uint32_
         }
     }
 #endif
-    return retVal;
+	return retVal;
 }
 
-bool SPIF_Receive(SPIF_HandleTypeDef *Handle, uint8_t *Rx, size_t Size, uint32_t Timeout)
-{
+bool SPIF_Receive(SPIF_HandleTypeDef *Handle, uint8_t *Rx, size_t Size,
+		uint32_t Timeout) {
 
-    bool retVal = false;
+	bool retVal = false;
 #if (SPIF_PLATFORM == SPIF_PLATFORM_HAL)
-    if (HAL_SPI_Receive(Handle->interface, Rx, Size, Timeout) == HAL_OK)
-    {
-        retVal = true;
-    }
-    else
-    {
-        dprintf("SPIF TIMEOUT\r\n");
-    }
+	SPI_HandleTypeDef *hspi = (SPI_HandleTypeDef*) Handle->interface;
+	SPIF_EmulatedPhases *pc = &Handle->phase_config;
+
+	if (pc->instructionEnabled) {
+		retVal = SPI_SendInstruction(Handle, Timeout);
+		if (!retVal) {
+			return retVal;
+		}
+	}
+
+	if (pc->addressEnabled) {
+		retVal = SPI_SendAddress(Handle, Timeout);
+		if (!retVal) {
+			return retVal;
+		}
+	}
+
+	if (pc->dummyCycles > 0) {
+		retVal = SPI_SendDummyCycles(Handle, Timeout);
+		if (!retVal) {
+			return retVal;
+		}
+	}
+
+	if (HAL_SPI_Receive(hspi, Rx, Size, Timeout) == HAL_OK) {
+		retVal = true;
+	} else {
+		dprintf("SPIF TIMEOUT\r\n");
+	}
 #elif (SPIF_PLATFORM == SPIF_PLATFORM_HAL_DMA)
     uint32_t startTime = HAL_GetTick();
     if (HAL_SPI_Receive_DMA(Handle->interface, Rx, Size) != HAL_OK)
@@ -170,7 +237,7 @@ bool SPIF_Receive(SPIF_HandleTypeDef *Handle, uint8_t *Rx, size_t Size, uint32_t
         }
     }
 #endif
-    return retVal;
+	return retVal;
 }
 
 #endif

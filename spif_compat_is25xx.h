@@ -18,5 +18,6 @@ bool SPIF_EraseSector(SPIF_HandleTypeDef *Handle, uint32_t Sector);
 bool SPIF_QPI_Enable(SPIF_HandleTypeDef *Handle);
 bool SPIF_EraseBlock(SPIF_HandleTypeDef *Handle, uint32_t Block);
 bool SPIF_EraseBlock_64K(SPIF_HandleTypeDef *Handle, uint32_t Block);
+bool SPIF_FindChip(SPIF_HandleTypeDef *Handle);
 
 #endif

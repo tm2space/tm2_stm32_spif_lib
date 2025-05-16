@@ -1,7 +1,6 @@
 #include "spif_compat_is25xx.h"
 #include "spif.h"
 
-
 #if (SPIF_COMPAT == SPIF_COMPAT_IS25XX)
 /*Register Definitions for IS25XX*/
 
@@ -155,7 +154,6 @@
 
 /*Password Register*/
 // TODO: define the password register bits
-
 /*PPB Lock Register*/
 #define SPIF_PPBLOCKREG_PPBLOCK (1 << 0) //PPB Lock Bit
 //bit 1 to 6 are reserved
@@ -163,134 +161,132 @@
 
 /*PPB Register*/
 //TODO: confirm if need this definition
-
 /*DYB register*/
 //TODO: confirm if need this definition
 
+bool SPIF_WriteEnable(SPIF_HandleTypeDef *Handle) {
+	bool retVal = true;
+	uint8_t tx[1] = { SPIF_CMD_WRITEENABLE };
 
+	SPIF_SetInstructionPhase(Handle, true, 1, SPIF_CMD_WRITEENABLE);
+	SPIF_SetAddressPhase(Handle, false, 0, 0);
+	SPIF_SetDummyCycles(Handle, 0);
+	SPIF_SetDataPhase(Handle, false);
 
-
-bool SPIF_WriteEnable(SPIF_HandleTypeDef *Handle)
-{
-  bool retVal = true;
-  uint8_t tx[1] = {SPIF_CMD_WRITEENABLE};
-  SPIF_CsPin(Handle, 0);
-  if (SPIF_Transmit(Handle, tx, 1, 100) == false)
-  {
-    retVal = false;
-    dprintf("SPIF_WriteEnable() Error\r\n");
-  }
-  SPIF_CsPin(Handle, 1);
-  return retVal;
+	SPIF_CsPin(Handle, 0);
+	if (SPIF_Transmit(Handle, tx, 1, 100) == false) {
+		retVal = false;
+		dprintf("SPIF_WriteEnable() Error\r\n");
+	}
+	SPIF_CsPin(Handle, 1);
+	return retVal;
 }
 
+bool SPIF_WriteDisable(SPIF_HandleTypeDef *Handle) {
+	bool retVal = true;
+	uint8_t tx[1] = { SPIF_CMD_WRITEDISABLE };
 
-bool SPIF_WriteDisable(SPIF_HandleTypeDef *Handle)
-{
-  bool retVal = true;
-  uint8_t tx[1] = {SPIF_CMD_WRITEDISABLE};
-  SPIF_CsPin(Handle, 0);
-  if (SPIF_Transmit(Handle, tx, 1, 100) == false)
-  {
-    retVal = false;
-    dprintf("SPIF_WriteDisable() Error\r\n");
-  }
-  SPIF_CsPin(Handle, 1);
-  return retVal;
+	SPIF_SetInstructionPhase(Handle, true, 1, SPIF_CMD_WRITEDISABLE);
+	SPIF_SetAddressPhase(Handle, false, 0, 0);
+	SPIF_SetDummyCycles(Handle, 0);
+	SPIF_SetDataPhase(Handle, false);
+
+	SPIF_CsPin(Handle, 0);
+	if (SPIF_Transmit(Handle, tx, 1, 100) == false) {
+		retVal = false;
+		dprintf("SPIF_WriteDisable() Error\r\n");
+	}
+	SPIF_CsPin(Handle, 1);
+	return retVal;
 }
 
+bool SPIF_WaitForWriting(SPIF_HandleTypeDef *Handle, uint32_t Timeout) {
+	bool retVal = false;
+	uint32_t startTime = HAL_GetTick();
+	while (1) {
+		SPIF_Delay(1);
+		if (HAL_GetTick() - startTime >= Timeout) {
+			dprintf("SPIF_WaitForWriting() TIMEOUT\r\n");
+			break;
+		}
+		if ((SPIF_ReadReg1(Handle) & SPIF_STATUS_WIP) == 0)
 
-
-bool SPIF_WaitForWriting(SPIF_HandleTypeDef *Handle, uint32_t Timeout)
-{
-  bool retVal = false;
-  uint32_t startTime = HAL_GetTick();
-  while (1)
-  {
-    SPIF_Delay(1);
-    if (HAL_GetTick() - startTime >= Timeout)
-    {
-      dprintf("SPIF_WaitForWriting() TIMEOUT\r\n");
-      break;
-    }
-    if ((SPIF_ReadReg1(Handle) & SPIF_STATUS_WIP) == 0)
-
-    {
-      retVal = true;
-      break;
-    }
-  }
-  return retVal;
+		{
+			retVal = true;
+			break;
+		}
+	}
+	return retVal;
 }
 
+uint8_t SPIF_ReadReg1(SPIF_HandleTypeDef *Handle) {
+	uint8_t retVal = 0;
+//	uint8_t tx[2] = { SPIF_CMD_READSTATUS1, SPIF_DUMMY_BYTE };
+	uint8_t rx[2];
 
-uint8_t SPIF_ReadReg1(SPIF_HandleTypeDef *Handle)
-{
-  uint8_t retVal = 0;
-  uint8_t tx[2] = {SPIF_CMD_READSTATUS1, SPIF_DUMMY_BYTE};
-  uint8_t rx[2];
-  SPIF_CsPin(Handle, 0);
-  if (SPIF_TransmitReceive(Handle, tx, rx, 2, 100) == true)
-  {
-    retVal = rx[1];
-  }
-  SPIF_CsPin(Handle, 1);
-  return retVal;
+	SPIF_SetInstructionPhase(Handle, true, 1, SPIF_CMD_READSTATUS1);
+	SPIF_SetAddressPhase(Handle, false, 0, 0);
+	SPIF_SetDummyCycles(Handle, 1);
+	SPIF_SetDataPhase(Handle, false);
+
+	SPIF_CsPin(Handle, 0);
+	if (SPIF_Receive(Handle, rx, 2, 100) == true) {
+		retVal = rx[1];
+	}
+	SPIF_CsPin(Handle, 1);
+	return retVal;
 }
 
-bool SPIF_WriteReg1(SPIF_HandleTypeDef *Handle, uint8_t Data)
-{
-  bool retVal = true;
-  uint8_t tx[2] = {SPIF_CMD_WRITESTATUS1, Data};
+bool SPIF_WriteReg1(SPIF_HandleTypeDef *Handle, uint8_t Data) {
+	bool retVal = true;
+	uint8_t tx[1] = { Data };
 
-  do
-  {
-    
-    if (SPIF_WriteEnable(Handle) == false){
-      retVal = false;
-      break;
-    }
+	SPIF_SetInstructionPhase(Handle, true, 1, SPIF_CMD_WRITESTATUS1);
+	SPIF_SetAddressPhase(Handle, false, 0, 0);
+	SPIF_SetDummyCycles(Handle, 0);
+	SPIF_SetDataPhase(Handle, true);
 
-    SPIF_CsPin(Handle, 0);
-    if (SPIF_Transmit(Handle, tx, 2, 100) == false)
-    {
-      retVal = false;
-      SPIF_CsPin(Handle, 1);
-      break;
-    }
-    SPIF_CsPin(Handle, 1);
-  } while (0);
+	do {
 
-  return retVal;
+		if (SPIF_WriteEnable(Handle) == false) {
+			retVal = false;
+			break;
+		}
+
+		SPIF_CsPin(Handle, 0);
+		if (SPIF_Transmit(Handle, tx, 1, 100) == false) {
+			retVal = false;
+			SPIF_CsPin(Handle, 1);
+			break;
+		}
+		SPIF_CsPin(Handle, 1);
+	} while (0);
+
+	return retVal;
 }
 
-
-bool SPIF_WriteFn(SPIF_HandleTypeDef *Handle, uint32_t PageNumber, uint8_t *Data, uint32_t Size, uint32_t Offset)
-{
-  bool retVal = false;
-  uint32_t address = 0, maximum = SPIF_PAGE_SIZE - Offset;
-  uint8_t tx[5];
-  do
-  {
+bool SPIF_WriteFn(SPIF_HandleTypeDef *Handle, uint32_t PageNumber,
+		uint8_t *Data, uint32_t Size, uint32_t Offset) {
+	bool retVal = false;
+	uint32_t address = 0, maximum = SPIF_PAGE_SIZE - Offset;
+//	uint8_t tx[5] = { 0 };
+	do {
 #if SPIF_DEBUG != SPIF_DEBUG_DISABLE
     uint32_t dbgTime = HAL_GetTick();
 #endif
-    dprintf("SPIF_WritePage() START PAGE %ld\r\n", PageNumber);
-    if (PageNumber >= Handle->PageCnt)
-    {
-      dprintf("SPIF_WritePage() ERROR PageNumber\r\n");
-      break;
-    }
-    if (Offset >= SPIF_PAGE_SIZE)
-    {
-      dprintf("SPIF_WritePage() ERROR Offset\r\n");
-      break;
-    }
-    if (Size > maximum)
-    {
-      Size = maximum;
-    }
-    address = SPIF_PageToAddress(PageNumber) + Offset;
+		dprintf("SPIF_WritePage() START PAGE %ld\r\n", PageNumber);
+		if (PageNumber >= Handle->PageCnt) {
+			dprintf("SPIF_WritePage() ERROR PageNumber\r\n");
+			break;
+		}
+		if (Offset >= SPIF_PAGE_SIZE) {
+			dprintf("SPIF_WritePage() ERROR Offset\r\n");
+			break;
+		}
+		if (Size > maximum) {
+			Size = maximum;
+		}
+		address = SPIF_PageToAddress(PageNumber) + Offset;
 #if SPIF_DEBUG == SPIF_DEBUG_FULL
       dprintf("SPIF WRITING {\r\n0x%02X", Data[0]);
       for (int i = 1; i < Size; i++)
@@ -303,134 +299,103 @@ bool SPIF_WriteFn(SPIF_HandleTypeDef *Handle, uint32_t PageNumber, uint8_t *Data
       }
       dprintf("\r\n}\r\n");
 #endif
-    if (SPIF_WriteEnable(Handle) == false)
-    {
-      break;
-    }
-    SPIF_CsPin(Handle, 0);
-    if (Handle->BlockCnt >= 512)
-    {
-      tx[0] = SPIF_CMD_PAGEPROG4ADD;
-      tx[1] = (address & 0xFF000000) >> 24;
-      tx[2] = (address & 0x00FF0000) >> 16;
-      tx[3] = (address & 0x0000FF00) >> 8;
-      tx[4] = (address & 0x000000FF);
-      if (SPIF_Transmit(Handle, tx, 5, 100) == false)
-      {
-        SPIF_CsPin(Handle, 1);
-        break;
-      }
-    }
-    else
-    {
-      tx[0] = SPIF_CMD_PAGEPROG3ADD;
-      tx[1] = (address & 0x00FF0000) >> 16;
-      tx[2] = (address & 0x0000FF00) >> 8;
-      tx[3] = (address & 0x000000FF);
-      if (SPIF_Transmit(Handle, tx, 4, 100) == false)
-      {
-        SPIF_CsPin(Handle, 1);
-        break;
-      }
-    }
-    if (SPIF_Transmit(Handle, Data, Size, 1000) == false)
-    {
-      SPIF_CsPin(Handle, 1);
-      break;
-    }
-    SPIF_CsPin(Handle, 1);
-    if (SPIF_WaitForWriting(Handle, 100))
-    {
-      dprintf("SPIF_WritePage() %d BYTES WITERN DONE AFTER %ld ms\r\n", (uint16_t)Size, HAL_GetTick() - dbgTime);
-      retVal = true;
-    }
+		if (SPIF_WriteEnable(Handle) == false) {
+			break;
+		}
+		SPIF_CsPin(Handle, 0);
+		if (Handle->BlockCnt >= 512) {
+			SPIF_SetInstructionPhase(Handle, true, 1, SPIF_CMD_PAGEPROG4ADD);
+			SPIF_SetAddressPhase(Handle, true, 4, address);
+			SPIF_SetDummyCycles(Handle, 0);
+			SPIF_SetDataPhase(Handle, true);
 
-  } while (0);
+			if (SPIF_Transmit(Handle, Data, Size, 1000) == false) {
+				SPIF_CsPin(Handle, 1);
+				break;
+			}
 
-  SPIF_WriteDisable(Handle);
-  return retVal;
+		} else {
+			SPIF_SetInstructionPhase(Handle, true, 1, SPIF_CMD_PAGEPROG3ADD);
+			SPIF_SetAddressPhase(Handle, true, 3, address);
+			SPIF_SetDummyCycles(Handle, 0);
+			SPIF_SetDataPhase(Handle, true);
+			if (SPIF_Transmit(Handle, Data, Size, 1000) == false) {
+				SPIF_CsPin(Handle, 1);
+				break;
+			}
+
+		}
+
+		SPIF_CsPin(Handle, 1);
+		if (SPIF_WaitForWriting(Handle, 100)) {
+			dprintf("SPIF_WritePage() %d BYTES WITERN DONE AFTER %ld ms\r\n", (uint16_t)Size, HAL_GetTick() - dbgTime);
+			retVal = true;
+		}
+
+	} while (0);
+
+	SPIF_WriteDisable(Handle);
+	return retVal;
 }
 
-
-bool SPIF_ReadFn(SPIF_HandleTypeDef *Handle, uint32_t Address, uint8_t *Data, uint32_t Size)
-{
-  bool retVal = false;
-  uint8_t tx[5];
-  do
-  {
+bool SPIF_ReadFn(SPIF_HandleTypeDef *Handle, uint32_t Address, uint8_t *Data,
+		uint32_t Size) {
+	bool retVal = false;
+//	uint8_t tx[5];
+	do {
 #if SPIF_DEBUG != SPIF_DEBUG_DISABLE
     uint32_t dbgTime = HAL_GetTick();
 #endif
-    dprintf("SPIF_ReadAddress() START ADDRESS %ld\r\n", Address);
-    SPIF_CsPin(Handle, 0);
-    if (Handle->BlockCnt >= 512)
-    {
-      tx[0] = SPIF_CMD_READDATA4ADD;
-      tx[1] = (Address & 0xFF000000) >> 24;
-      tx[2] = (Address & 0x00FF0000) >> 16;
-      tx[3] = (Address & 0x0000FF00) >> 8;
-      tx[4] = (Address & 0x000000FF);
-      if (SPIF_Transmit(Handle, tx, 5, 100) == false)
-      {
-        SPIF_CsPin(Handle, 1);
-        break;
-      }
-    }
-    else
-    {
-      tx[0] = SPIF_CMD_READDATA3ADD;
-      tx[1] = (Address & 0x00FF0000) >> 16;
-      tx[2] = (Address & 0x0000FF00) >> 8;
-      tx[3] = (Address & 0x000000FF);
-      if (SPIF_Transmit(Handle, tx, 4, 100) == false)
-      {
-        SPIF_CsPin(Handle, 1);
-        break;
-      }
-    }
-    uint16_t max_uint16_size = 0xFFFF - 2;
-    if(Size > max_uint16_size)
-    {
-    	uint32_t delta = Size;
-    	uint32_t Data_offset = 0;
-    	while(delta > 0)
-    	{
-    		if(delta <= max_uint16_size)
-    		{
-    			if (SPIF_Receive(Handle, (Data+Data_offset), delta, 2000) == false)
-    			{
-    				SPIF_CsPin(Handle, 1);
-    				break;
-    			}
-    			delta = 0;
-    		}
-    		else
-    		{
-    			if (SPIF_Receive(Handle, (Data+Data_offset), max_uint16_size, 2000) == false)
-    			{
-    				SPIF_CsPin(Handle, 1);
-    				break;
-    			}
-    			delta = abs(delta - max_uint16_size);
-    			Data_offset += max_uint16_size;
-    		}
-    	}
-    	if(delta > 0)
-    	{
-    		//break the main do-while loop, so as to return false
-    		break;
-    	}
-    }
-    else
-    {
-    	if(SPIF_Receive(Handle, Data, Size, 2000) == false)
-    	{
-    		SPIF_CsPin(Handle, 1);
-    		break;
-    	}
-    }
-    SPIF_CsPin(Handle, 1);
-    dprintf("SPIF_ReadAddress() %d BYTES READ DONE AFTER %ld ms\r\n", (uint16_t)Size, HAL_GetTick() - dbgTime);
+		dprintf("SPIF_ReadAddress() START ADDRESS %ld\r\n", Address);
+		SPIF_CsPin(Handle, 0);
+		if (Handle->BlockCnt >= 512) {
+			SPIF_SetInstructionPhase(Handle, true, 1, SPIF_CMD_READDATA4ADD);
+			SPIF_SetAddressPhase(Handle, true, 4, Address);
+			SPIF_SetDummyCycles(Handle, 0);
+			SPIF_SetDataPhase(Handle, false);
+
+		} else {
+
+			SPIF_SetInstructionPhase(Handle, true, 1,SPIF_CMD_READDATA3ADD );
+			SPIF_SetAddressPhase(Handle, true, 3, Address);
+			SPIF_SetDummyCycles(Handle, 0);
+			SPIF_SetDataPhase(Handle, false);
+
+		}
+		uint16_t max_uint16_size = 0xFFFF - 2;
+		if (Size > max_uint16_size) {
+			uint32_t delta = Size;
+			uint32_t Data_offset = 0;
+			while (delta > 0) {
+				if (delta <= max_uint16_size) {
+					if (SPIF_Receive(Handle, (Data + Data_offset), delta,
+							2000) == false) {
+						SPIF_CsPin(Handle, 1);
+						break;
+					}
+					delta = 0;
+				} else {
+					if (SPIF_Receive(Handle, (Data + Data_offset),
+							max_uint16_size, 2000) == false) {
+						SPIF_CsPin(Handle, 1);
+						break;
+					}
+					delta = abs(delta - max_uint16_size);
+					Data_offset += max_uint16_size;
+				}
+			}
+			if (delta > 0) {
+				//break the main do-while loop, so as to return false
+				break;
+			}
+		} else {
+			if (SPIF_Receive(Handle, Data, Size, 2000) == false) {
+				SPIF_CsPin(Handle, 1);
+				break;
+			}
+		}
+		SPIF_CsPin(Handle, 1);
+		dprintf("SPIF_ReadAddress() %d BYTES READ DONE AFTER %ld ms\r\n", (uint16_t)Size, HAL_GetTick() - dbgTime);
 #if SPIF_DEBUG == SPIF_DEBUG_FULL
     dprintf("{\r\n0x%02X", Data[0]);
     for (int i = 1; i < Size; i++)
@@ -443,235 +408,303 @@ bool SPIF_ReadFn(SPIF_HandleTypeDef *Handle, uint32_t Address, uint8_t *Data, ui
     }
     dprintf("\r\n}\r\n");
 #endif
-    retVal = true;
+		retVal = true;
 
-  } while (0);
+	} while (0);
 
-  return retVal;
+	return retVal;
 }
 
-
 /**
-  * @brief  Full Erase chip.
-  * @note   Send the Full-Erase-chip command and wait for completion
-  *
-  * @param  *Handle: Pointer to SPIF_HandleTypeDef structure
-  *
-  * @retval bool: true or false
-  */
-bool SPIF_EraseChip(SPIF_HandleTypeDef *Handle)
-{
-  SPIF_Lock(Handle);
-  bool retVal = false;
-  uint8_t tx[1] = {SPIF_CMD_CHIPERASE1};
-  do
-  {
+ * @brief  Full Erase chip.
+ * @note   Send the Full-Erase-chip command and wait for completion
+ *
+ * @param  *Handle: Pointer to SPIF_HandleTypeDef structure
+ *
+ * @retval bool: true or false
+ */
+bool SPIF_EraseChip(SPIF_HandleTypeDef *Handle) {
+	SPIF_Lock(Handle);
+	bool retVal = false;
+	uint8_t tx[1] = { 0 };
+	do {
 #if SPIF_DEBUG != SPIF_DEBUG_DISABLE
     uint32_t dbgTime = HAL_GetTick();
 #endif
-    dprintf("SPIF_EraseChip() START\r\n");
-    if (SPIF_WriteEnable(Handle) == false)
-    {
-      break;
-    }
-    SPIF_CsPin(Handle, 0);
-    if (SPIF_Transmit(Handle, tx, 1, 100) == false)
-    {
-      SPIF_CsPin(Handle, 1);
-      break;
-    }
-    SPIF_CsPin(Handle, 1);
-    if (SPIF_WaitForWriting(Handle, Handle->BlockCnt * 1000))
-    {
-      dprintf("SPIF_EraseChip() DONE AFTER %ld ms\r\n", HAL_GetTick() - dbgTime);
-      retVal = true;
-    }
+		dprintf("SPIF_EraseChip() START\r\n");
+		if (SPIF_WriteEnable(Handle) == false) {
+			break;
+		}
+		SPIF_SetInstructionPhase(Handle, true, 1, SPIF_CMD_CHIPERASE1);
+		SPIF_SetAddressPhase(Handle, false, 0, 0);
+		SPIF_SetDummyCycles(Handle, 0);
+		SPIF_SetDataPhase(Handle, false);
 
-  } while (0);
+		SPIF_CsPin(Handle, 0);
+		if (SPIF_Transmit(Handle, tx, 1, 100) == false) {
+			SPIF_CsPin(Handle, 1);
+			break;
+		}
+		SPIF_CsPin(Handle, 1);
+		if (SPIF_WaitForWriting(Handle, Handle->BlockCnt * 1000)) {
+			dprintf("SPIF_EraseChip() DONE AFTER %ld ms\r\n", HAL_GetTick() - dbgTime);
+			retVal = true;
+		}
 
-  SPIF_WriteDisable(Handle);
-  SPIF_UnLock(Handle);
-  return retVal;
+	} while (0);
+
+	SPIF_WriteDisable(Handle);
+	SPIF_UnLock(Handle);
+	return retVal;
 }
 
-
 /**
-  * @brief  Erase Sector.
-  * @note   Send the Erase-Sector command and wait for completion
-  *
-  * @param  *Handle: Pointer to SPIF_HandleTypeDef structure
-  * @param  Sector: Selected Sector
-  *
-  * @retval bool: true or false
-  */
-bool SPIF_EraseSector(SPIF_HandleTypeDef *Handle, uint32_t Sector)
-{
-  SPIF_Lock(Handle);
-  bool retVal = false;
-  uint32_t address = Sector * SPIF_SECTOR_SIZE;
-  uint8_t tx[5];
-  do
-  {
+ * @brief  Erase Sector.
+ * @note   Send the Erase-Sector command and wait for completion
+ *
+ * @param  *Handle: Pointer to SPIF_HandleTypeDef structure
+ * @param  Sector: Selected Sector
+ *
+ * @retval bool: true or false
+ */
+bool SPIF_EraseSector(SPIF_HandleTypeDef *Handle, uint32_t Sector) {
+	SPIF_Lock(Handle);
+	bool retVal = false;
+	uint32_t address = Sector * SPIF_SECTOR_SIZE;
+	uint8_t tx[5];
+	do {
 #if SPIF_DEBUG != SPIF_DEBUG_DISABLE
     uint32_t dbgTime = HAL_GetTick();
 #endif
-    dprintf("SPIF_EraseSector() START SECTOR %ld\r\n", Sector);
-    if (Sector >= Handle->SectorCnt)
-    {
-      dprintf("SPIF_EraseSector() ERROR Sector NUMBER\r\n");
-      break;
-    }
-    if (SPIF_WriteEnable(Handle) == false)
-    {
-      break;
-    }
-    SPIF_CsPin(Handle, 0);
-    if (Handle->BlockCnt >= 512)
-    {
-      tx[0] = SPIF_CMD_SECTORERASE4ADD;
-      tx[1] = (address & 0xFF000000) >> 24;
-      tx[2] = (address & 0x00FF0000) >> 16;
-      tx[3] = (address & 0x0000FF00) >> 8;
-      tx[4] = (address & 0x000000FF);
-      if (SPIF_Transmit(Handle, tx, 5, 100) == false)
-      {
-        SPIF_CsPin(Handle, 1);
-        break;
-      }
-    }
-    else
-    {
-      tx[0] = SPIF_CMD_SECTORERASE3ADD;
-      tx[1] = (address & 0x00FF0000) >> 16;
-      tx[2] = (address & 0x0000FF00) >> 8;
-      tx[3] = (address & 0x000000FF);
-      if (SPIF_Transmit(Handle, tx, 4, 100) == false)
-      {
-        SPIF_CsPin(Handle, 1);
-        break;
-      }
-    }
-    SPIF_CsPin(Handle, 1);
-    if (SPIF_WaitForWriting(Handle, 1000))
-    {
-      dprintf("SPIF_EraseSector() DONE AFTER %ld ms\r\n", HAL_GetTick() - dbgTime);
-      retVal = true;
-    }
+		dprintf("SPIF_EraseSector() START SECTOR %ld\r\n", Sector);
+		if (Sector >= Handle->SectorCnt) {
+			dprintf("SPIF_EraseSector() ERROR Sector NUMBER\r\n");
+			break;
+		}
+		if (SPIF_WriteEnable(Handle) == false) {
+			break;
+		}
 
-  } while (0);
+		if (Handle->BlockCnt >= 512) {
+			SPIF_SetInstructionPhase(Handle, true, 1,SPIF_CMD_SECTORERASE4ADD );
+			SPIF_SetAddressPhase(Handle, true, 4, address);
+			SPIF_SetDummyCycles(Handle, 0);
+			SPIF_SetDataPhase(Handle, false);
+			SPIF_CsPin(Handle, 0);
 
-  SPIF_WriteDisable(Handle);
-  SPIF_UnLock(Handle);
-  return retVal;
+			if (SPIF_Transmit(Handle, tx, 5, 100) == false) {
+				SPIF_CsPin(Handle, 1);
+				break;
+			}
+		} else {
+			SPIF_SetInstructionPhase(Handle, true, 1,SPIF_CMD_SECTORERASE3ADD );
+			SPIF_SetAddressPhase(Handle, true, 3, address);
+			SPIF_SetDummyCycles(Handle, 0);
+			SPIF_SetDataPhase(Handle, false);
+			SPIF_CsPin(Handle, 0);
+
+			if (SPIF_Transmit(Handle, tx, 4, 100) == false) {
+				SPIF_CsPin(Handle, 1);
+				break;
+			}
+		}
+		SPIF_CsPin(Handle, 1);
+		if (SPIF_WaitForWriting(Handle, 1000)) {
+			dprintf("SPIF_EraseSector() DONE AFTER %ld ms\r\n", HAL_GetTick() - dbgTime);
+			retVal = true;
+		}
+
+	} while (0);
+
+	SPIF_WriteDisable(Handle);
+	SPIF_UnLock(Handle);
+	return retVal;
 }
-
 
 /*
-  * @brief  Write QPI Enable command
-  * @note   Send the QPI-Enable command
-  * 
-  * @param  *Handle: Pointer to SPIF_HandleTypeDef structure
-  * @retval bool: true or false
-  */
-bool SPIF_QPI_Enable(SPIF_HandleTypeDef *Handle)
-{
-  bool retVal = true;
-  uint8_t tx[1] = {SPIF_CMD_ENTERQPI};
-  SPIF_CsPin(Handle, 0);
-  if (SPIF_Transmit(Handle, tx, 1, 100) == false)
-  {
-    retVal = false;
-    dprintf("SPIF_IS25_QPI_Enable() Error\r\n");
-  }
-  SPIF_CsPin(Handle, 1);
-   return retVal;
- }
+ * @brief  Write QPI Enable command
+ * @note   Send the QPI-Enable command
+ *
+ * @param  *Handle: Pointer to SPIF_HandleTypeDef structure
+ * @retval bool: true or false
+ */
+bool SPIF_QPI_Enable(SPIF_HandleTypeDef *Handle) {
+	bool retVal = true;
+	uint8_t tx[1] = { SPIF_CMD_ENTERQPI };
 
+	SPIF_SetInstructionPhase(Handle, true, 1,SPIF_CMD_ENTERQPI );
+	SPIF_SetAddressPhase(Handle, false, 0, 0);
+	SPIF_SetDummyCycles(Handle, 0);
+	SPIF_SetDataPhase(Handle, false);
 
+	SPIF_CsPin(Handle, 0);
 
-/**
-  * @brief  Erase 32K Block.
-  * @note   Send the Erase-Block command and wait for completion
-  *
-  * @param  *Handle: Pointer to SPIF_HandleTypeDef structure
-  * @param  Sector: Selected Block
-  *
-  * @retval bool: true or false
-  */
-bool SPIF_EraseBlock(SPIF_HandleTypeDef *Handle, uint32_t Block)
-{
-  SPIF_Lock(Handle);
-  bool retVal = false;
-  uint32_t address = Block * SPIF_BLOCK_SIZE;
-  uint8_t tx[5];
-  do
-  {
-#if SPIF_DEBUG != SPIF_DEBUG_DISABLE
-    uint32_t dbgTime = HAL_GetTick();
-#endif
-    dprintf("SPIF_EraseBlock() START PAGE %ld\r\n", Block);
-    if (Block >= Handle->BlockCnt)
-    {
-      dprintf("SPIF_EraseBlock() ERROR Block NUMBER\r\n");
-      break;
-    }
-    if (SPIF_WriteEnable(Handle) == false)
-    {
-      break;
-    }
-    SPIF_CsPin(Handle, 0);
-    if (Handle->BlockCnt >= 512)
-    {
-      tx[0] = SPIF_CMD_BLOCKERASE32K4ADD;
-      tx[1] = (address & 0xFF000000) >> 24;
-      tx[2] = (address & 0x00FF0000) >> 16;
-      tx[3] = (address & 0x0000FF00) >> 8;
-      tx[4] = (address & 0x000000FF);
-      if (SPIF_Transmit(Handle, tx, 5, 100) == false)
-      {
-        SPIF_CsPin(Handle, 1);
-        break;
-      }
-    }
-    else
-    {
-      tx[0] = SPIF_CMD_BLOCKERASE32K3ADD;
-      tx[1] = (address & 0x00FF0000) >> 16;
-      tx[2] = (address & 0x0000FF00) >> 8;
-      tx[3] = (address & 0x000000FF);
-      if (SPIF_Transmit(Handle, tx, 4, 100) == false)
-      {
-        SPIF_CsPin(Handle, 1);
-        break;
-      }
-    }
-    SPIF_CsPin(Handle, 1);
-    if (SPIF_WaitForWriting(Handle, 3000))
-    {
-      dprintf("SPIF_EraseBlock() DONE AFTER %ld ms\r\n", HAL_GetTick() - dbgTime);
-      retVal = true;
-    }
-
-  } while (0);
-
-  SPIF_WriteDisable(Handle);
-  SPIF_UnLock(Handle);
-  return retVal;
+	if (SPIF_Transmit(Handle, tx, 1, 100) == false) {
+		retVal = false;
+		dprintf("SPIF_IS25_QPI_Enable() Error\r\n");
+	}
+	SPIF_CsPin(Handle, 1);
+	return retVal;
 }
 
 /**
-  * @brief  Erase 64K Block.
-  * @note   Send the Erase-Block command and wait for completion
-  *
-  * @param  *Handle: Pointer to SPIF_HandleTypeDef structure
-  * @param  Sector: Selected Block
-  *
-  * @retval bool: true or false
-  */
-bool SPIF_EraseBlock_64K(SPIF_HandleTypeDef *Handle, uint32_t Block){
+ * @brief  Erase 32K Block.
+ * @note   Send the Erase-Block command and wait for completion
+ *
+ * @param  *Handle: Pointer to SPIF_HandleTypeDef structure
+ * @param  Sector: Selected Block
+ *
+ * @retval bool: true or false
+ */
+bool SPIF_EraseBlock(SPIF_HandleTypeDef *Handle, uint32_t Block) {
+	SPIF_Lock(Handle);
+	bool retVal = false;
+	uint32_t address = Block * SPIF_BLOCK_SIZE;
+	uint8_t tx[5];
+	do {
+#if SPIF_DEBUG != SPIF_DEBUG_DISABLE
+    uint32_t dbgTime = HAL_GetTick();
+#endif
+		dprintf("SPIF_EraseBlock() START PAGE %ld\r\n", Block);
+		if (Block >= Handle->BlockCnt) {
+			dprintf("SPIF_EraseBlock() ERROR Block NUMBER\r\n");
+			break;
+		}
+		if (SPIF_WriteEnable(Handle) == false) {
+			break;
+		}
+		SPIF_CsPin(Handle, 0);
+		if (Handle->BlockCnt >= 512) {
+			SPIF_SetInstructionPhase(Handle, true, 1,SPIF_CMD_BLOCKERASE32K4ADD );
+			SPIF_SetAddressPhase(Handle, true, 4, address);
+			SPIF_SetDummyCycles(Handle, 0);
+			SPIF_SetDataPhase(Handle, false);
+			SPIF_CsPin(Handle, 0);
+
+			if (SPIF_Transmit(Handle, tx, 5, 100) == false) {
+				SPIF_CsPin(Handle, 1);
+				break;
+			}
+		} else {
+			SPIF_SetInstructionPhase(Handle, true, 1,SPIF_CMD_BLOCKERASE32K3ADD );
+			SPIF_SetAddressPhase(Handle, true, 3, address);
+			SPIF_SetDummyCycles(Handle, 0);
+			SPIF_SetDataPhase(Handle, false);
+
+			if (SPIF_Transmit(Handle, tx, 4, 100) == false) {
+				SPIF_CsPin(Handle, 1);
+				break;
+			}
+		}
+		SPIF_CsPin(Handle, 1);
+		if (SPIF_WaitForWriting(Handle, 3000)) {
+			dprintf("SPIF_EraseBlock() DONE AFTER %ld ms\r\n", HAL_GetTick() - dbgTime);
+			retVal = true;
+		}
+
+	} while (0);
+
+	SPIF_WriteDisable(Handle);
+	SPIF_UnLock(Handle);
+	return retVal;
+}
+
+/**
+ * @brief  Erase 64K Block.
+ * @note   Send the Erase-Block command and wait for completion
+ *
+ * @param  *Handle: Pointer to SPIF_HandleTypeDef structure
+ * @param  Sector: Selected Block
+ *
+ * @retval bool: true or false
+ */
+bool SPIF_EraseBlock_64K(SPIF_HandleTypeDef *Handle, uint32_t Block) {
 	//to be implemented
 	__NOP();
 	return false;
+}
+
+bool SPIF_FindChip(SPIF_HandleTypeDef *Handle) {
+//	uint8_t tx[4] = { SPIF_CMD_JEDECID, 0xFF, 0xFF, 0xFF };
+	uint8_t rx[4];
+	bool retVal = false;
+	do {
+		dprintf("SPIF_FindChip()\r\n");
+		SPIF_SetInstructionPhase(Handle, true, 1,SPIF_CMD_JEDECID );
+		SPIF_SetAddressPhase(Handle, false, 0, 0);
+		SPIF_SetDummyCycles(Handle, 3);
+		SPIF_SetDataPhase(Handle, false);
+
+		SPIF_CsPin(Handle, 0);
+		if (SPIF_Receive(Handle, rx, 4, 100) == false) {
+			SPIF_CsPin(Handle, 1);
+			break;
+		}
+		SPIF_CsPin(Handle, 1);
+		dprintf("CHIP ID: 0x%02X%02X%02X\r\n", rx[1], rx[2], rx[3]);
+		Handle->Manufactor = rx[1];
+		Handle->MemType = rx[2];
+		Handle->Size = rx[3];
+
+		dprintf(" - SIZE: ");
+		switch (Handle->Size) {
+		case SPIF_SIZE_1MBIT:
+			Handle->BlockCnt = 2;
+			dprintf("1 MBIT\r\n");
+			break;
+		case SPIF_SIZE_2MBIT:
+			Handle->BlockCnt = 4;
+			dprintf("2 MBIT\r\n");
+			break;
+		case SPIF_SIZE_4MBIT:
+			Handle->BlockCnt = 8;
+			dprintf("4 MBIT\r\n");
+			break;
+		case SPIF_SIZE_8MBIT:
+			Handle->BlockCnt = 16;
+			dprintf("8 MBIT\r\n");
+			break;
+		case SPIF_SIZE_16MBIT:
+			Handle->BlockCnt = 32;
+			dprintf("16 MBIT\r\n");
+			break;
+		case SPIF_SIZE_32MBIT:
+			Handle->BlockCnt = 64;
+			dprintf("32 MBIT\r\n");
+			break;
+		case SPIF_SIZE_64MBIT:
+			Handle->BlockCnt = 128;
+			dprintf("64 MBIT\r\n");
+			break;
+		case SPIF_SIZE_128MBIT:
+			Handle->BlockCnt = 256;
+			dprintf("128 MBIT\r\n");
+			break;
+		case SPIF_SIZE_256MBIT:
+			Handle->BlockCnt = 512;
+			dprintf("256 MBIT\r\n");
+			break;
+		case SPIF_SIZE_512MBIT:
+			Handle->BlockCnt = 1024;
+			dprintf("512 MBIT\r\n");
+			break;
+		default:
+			Handle->Size = SPIF_SIZE_ERROR;
+			dprintf("ERROR\r\n");
+			break;
+		}
+
+		Handle->SectorCnt = Handle->BlockCnt * 16;
+		Handle->PageCnt = (Handle->SectorCnt * SPIF_SECTOR_SIZE)
+				/ SPIF_PAGE_SIZE;
+		dprintf("SPIF BLOCK CNT: %ld\r\n", Handle->BlockCnt); dprintf("SPIF SECTOR CNT: %ld\r\n", Handle->SectorCnt); dprintf("SPIF PAGE CNT: %ld\r\n", Handle->PageCnt); dprintf("SPIF STATUS1: 0x%02X\r\n", SPIF_ReadReg1(Handle));
+//    dprintf("SPIF STATUS2: 0x%02X\r\n", SPIF_ReadReg2(Handle));
+//    dprintf("SPIF STATUS3: 0x%02X\r\n", SPIF_ReadReg3(Handle));
+		retVal = true;
+
+	} while (0);
+
+	return retVal;
 }
 
 #endif

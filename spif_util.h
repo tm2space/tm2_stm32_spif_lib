@@ -77,6 +77,24 @@ typedef enum {
 } SPIF_SizeTypeDef;
 
 typedef struct {
+    // --- Instruction Phase ---
+    bool    instructionEnabled;
+    uint8_t instructionSize;
+    uint8_t instruction;
+
+    // --- Address Phase ---
+    bool    addressEnabled;
+    uint8_t addressSize;
+    uint32_t address;
+
+    // Dummy Cycles ---
+    uint8_t dummyCycles;
+
+    // --- Data Phase ---
+    bool    dataEnabled;
+} SPIF_EmulatedPhases;
+
+typedef struct {
 	void *interface;
 	GPIO_TypeDef *Gpio;
 	SPIF_ManufactorTypeDef Manufactor;
@@ -90,6 +108,7 @@ typedef struct {
 	uint32_t SectorCnt;
 	uint32_t BlockCnt;
 
+	SPIF_EmulatedPhases phase_config;
 } SPIF_HandleTypeDef;
 
 
@@ -100,6 +119,10 @@ void SPIF_UnLock(SPIF_HandleTypeDef *Handle);
 void SPIF_CsPin(SPIF_HandleTypeDef *Handle, bool Select);
 
 
+void SPIF_SetInstructionPhase(SPIF_HandleTypeDef* handle, bool enabled, uint8_t size, uint8_t instruction);
+void SPIF_SetAddressPhase(SPIF_HandleTypeDef *handle, bool enabled, uint8_t size, uint32_t address);
+void SPIF_SetDummyCycles(SPIF_HandleTypeDef *handle, uint8_t cycles);
+void SPIF_SetDataPhase(SPIF_HandleTypeDef *handle, bool enabled);
 
 
 #endif /* INC_SPIF_UTIL_H_ */

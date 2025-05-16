@@ -52,5 +52,63 @@ void SPIF_CsPin(SPIF_HandleTypeDef *Handle, bool Select)
   for (int i = 0; i < 10; i++);
 }
 
+/***********************************************************************************************************/
+/*
+* @brief Sets the instruction phase parameters
+*
+* @param phases Pointer to the SPIF_EmulatedPhases structure
+* @param enabled Whether the instruction phase is enabled
+* @param size Size of the instruction in bytes
+* @param instruction The instruction value
+*/
+void SPIF_SetCommandPhase(SPIF_HandleTypeDef* handle, bool enabled, uint8_t size, uint8_t instruction) {
+
+   handle->phase_config.instructionEnabled= enabled;
+   handle->phase_config.instructionSize = size;
+   handle->phase_config.instruction = instruction;
+
+}
 
 
+/**
+ * @brief Sets the address phase parameters
+ *
+ * @param phases Pointer to the SPIF_EmulatedPhases structure
+ * @param enabled Whether the address phase is enabled
+ * @param size Size of the address in bytes (typically 1-4)
+ * @param address The address value
+ */
+void SPIF_SetAddressPhase(SPIF_HandleTypeDef *handle, bool enabled, uint8_t size, uint32_t address) {
+
+
+    handle->phase_config.addressEnabled = enabled;
+    handle->phase_config.addressSize = size;
+    handle->phase_config.address = address;
+
+}
+
+
+/**
+ * @brief Sets the dummy cycles parameter
+ *
+ * @param phases Pointer to the SPIF_EmulatedPhases structure
+ * @param cycles Number of dummy cycles
+ */
+void SPIF_SetDummyCycles(SPIF_HandleTypeDef *handle, uint8_t cycles) {
+
+    handle->phase_config.dummyCycles = cycles;
+
+}
+
+
+/**
+ * @brief Sets the data phase parameters
+ *
+ * @param phases Pointer to the SPIF_EmulatedPhases structure
+ * @param enabled Whether the data phase is enabled
+ * @param length Length of data in bytes
+ */
+void SPIF_SetDataPhase(SPIF_HandleTypeDef *handle, bool enabled) {
+
+    handle->phase_config.dataEnabled = enabled;
+}

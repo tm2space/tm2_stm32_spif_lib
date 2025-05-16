@@ -60,7 +60,7 @@ extern "C"
 #include "stm32u5xx_hal.h"
 #include "stm32u5xx_hal_ospi.h"
 #else
-#include "spi.h"
+#include "stm32u5xx_hal_spi.h"
 #endif
 
 	bool SPIF_TransmitReceive(SPIF_HandleTypeDef *Handle, uint8_t *Tx,
@@ -93,11 +93,7 @@ extern "C"
 
 #endif
 
-	/*Helper Functions*/
-	void SPIF_Delay(uint32_t Delay);
-	void SPIF_Lock(SPIF_HandleTypeDef *Handle);
-	void SPIF_UnLock(SPIF_HandleTypeDef *Handle);
-	void SPIF_CsPin(SPIF_HandleTypeDef *Handle, bool Select);
+
 
 	/************************************************************************************************************
 	 **************    Public Functions

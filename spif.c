@@ -20,53 +20,6 @@
 
 /***********************************************************************************************************/
 
-void SPIF_Delay(uint32_t Delay)
-{
-#if SPIF_RTOS == SPIF_RTOS_DISABLE
-  HAL_Delay(Delay);
-#elif (SPIF_RTOS == SPIF_RTOS_CMSIS_V1) || (SPIF_RTOS == SPIF_RTOS_CMSIS_V2)
-  uint32_t d = (configTICK_RATE_HZ * Delay) / 1000;
-  if (d == 0)
-      d = 1;
-  osDelay(d);
-#elif SPIF_RTOS == SPIF_RTOS_THREADX
-  uint32_t d = (TX_TIMER_TICKS_PER_SECOND * Delay) / 1000;
-  if (d == 0)
-    d = 1;
-  tx_thread_sleep(d);
-#endif
-}
-
-/***********************************************************************************************************/
-
-void SPIF_Lock(SPIF_HandleTypeDef *Handle)
-{
-  while (Handle->Lock)
-  {
-    SPIF_Delay(1);
-  }
-  Handle->Lock = 1;
-}
-
-/***********************************************************************************************************/
-
-void SPIF_UnLock(SPIF_HandleTypeDef *Handle)
-{
-  Handle->Lock = 0;
-}
-
-/***********************************************************************************************************/
-
-void SPIF_CsPin(SPIF_HandleTypeDef *Handle, bool Select)
-{
-  HAL_GPIO_WritePin(Handle->Gpio, Handle->Pin, (GPIO_PinState)Select);
-  for (int i = 0; i < 10; i++);
-}
-
-
-
-/***********************************************************************************************************/
-
 
 
 
@@ -76,9 +29,54 @@ void SPIF_CsPin(SPIF_HandleTypeDef *Handle, bool Select)
 **************    Public Functions
 ************************************************************************************************************/
 
-/***********************************************************************************************************/
 
-/***********************************************************************************************************/
+/**
+ * @brief  Initialize the SPIF.
+ * @note   Enable and configure the SPI and Set GPIO as output for CS pin on the CubeMX
+ *
+ * @param  *Handle: Pointer to SPIF_HandleTypeDef structure
+ * @param  *interface: Pointer to either SPI_HandleTypeDef or OSPI_HandleTypeDef structure
+ * @param  *Gpio: Pointer to a GPIO_TypeDef structure for CS
+ * @param  Pin: Pin of CS
+ *
+ * @retval bool: true or false
+ */
+bool SPIF_Init(SPIF_HandleTypeDef *Handle, void *interface, GPIO_TypeDef *Gpio, uint16_t Pin)
+{
+    bool retVal = false;
+    do
+    {
+        if ((Handle == NULL) || (interface == NULL) || (Gpio == NULL) || (Handle->Inited == 1))
+        {
+            dprintf("SPIF_Init() Error, Wrong Parameter\r\n");
+            break;
+        }
+        memset(Handle, 0, sizeof(SPIF_HandleTypeDef));
+        Handle->interface = interface;
+        Handle->Gpio = Gpio;
+        Handle->Pin = Pin;
+        SPIF_CsPin(Handle, 1);
+        /* wait for stable VCC */
+        while (HAL_GetTick() < 20)
+        {
+            SPIF_Delay(1);
+        }
+        if (SPIF_WriteDisable(Handle) == false)
+        {
+            break;
+        }
+        retVal = SPIF_FindChip(Handle);
+        if (retVal)
+        {
+            Handle->Inited = 1;
+            dprintf("SPIF_Init() Done\r\n");
+        }
+
+    } while (0);
+
+    return retVal;
+}
+
 
 /**
   * @brief  Write data array to an Address
