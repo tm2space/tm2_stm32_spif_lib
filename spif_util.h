@@ -93,6 +93,12 @@ typedef struct {
 } SPIF_HandleTypeDef;
 
 
+/*Helper Functions*/
+void SPIF_Delay(uint32_t Delay);
+void SPIF_Lock(SPIF_HandleTypeDef *Handle);
+void SPIF_UnLock(SPIF_HandleTypeDef *Handle);
+void SPIF_CsPin(SPIF_HandleTypeDef *Handle, bool Select);
+
 
 
 
