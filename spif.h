@@ -73,20 +73,25 @@ extern "C"
 
 #endif
 
-	#if (SPIF_PLATFORM == SPIF_INTERFACE_OCTOSPI)
-	#include "spif_interface_octospi.h"
-#else
-
-#include "spif_interface_spi.h"
-
-#endif
+//	#if (SPIF_PLATFORM == SPIF_INTERFACE_OCTOSPI)
+//	#include "spif_interface_octospi.h"
+//#else
+//
+//#include "spif_interface_spi.h"
+//
+//#endif
 
 
 
 	/************************************************************************************************************
 	 **************    Public Functions
 	 ************************************************************************************************************/
-
+//#if (SPIF_PLATFORM == SPIF_PLATFORM_OCTOSPI)
+//	bool SPIF_OCTOSPI_Init(SPIF_HandleTypeDef *Handle,
+//			OSPI_HandleTypeDef *HOspi, GPIO_TypeDef *Gpio, uint16_t Pin);
+//#else
+//	bool SPIF_Init(SPIF_HandleTypeDef *Handle, SPI_HandleTypeDef *HSpi, GPIO_TypeDef *Gpio, uint16_t Pin);
+//#endif
 
 	bool SPIF_WriteAddress(SPIF_HandleTypeDef *Handle, uint32_t Address,
 			uint8_t *Data, uint32_t Size);

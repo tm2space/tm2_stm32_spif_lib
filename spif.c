@@ -5,7 +5,7 @@
 
 #include "spif.h"
 #include <stdlib.h>
-
+#include "spif_internal.h"
 
 #if SPIF_RTOS == SPIF_RTOS_DISABLE
 #elif SPIF_RTOS == SPIF_RTOS_CMSIS_V1

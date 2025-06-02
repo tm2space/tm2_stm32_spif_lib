@@ -15,15 +15,6 @@
 #include "spif_common.h"
 
 
-#if SPIF_DEBUG == SPIF_DEBUG_DISABLE
-#define dprintf(...)
-#else
-#include <stdio.h>
-#define dprintf(...) printf(__VA_ARGS__)
-#endif
-
-
-
 
 /************************************************************************************************************
  **************    Public Definitions

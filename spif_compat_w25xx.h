@@ -3,6 +3,7 @@
 #define _SPIF_COMPAT_W25XX_H_
 
 #include "spif_common.h"
+#include "spif_internal.h"
 #include <stdlib.h>
 
 

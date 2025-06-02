@@ -2,6 +2,7 @@
 #define _SPIF_COMPAT_IS25_H_
 
 #include "spif_common.h"
+#include "spif_internal.h"
 #include <stdlib.h>
 
 
