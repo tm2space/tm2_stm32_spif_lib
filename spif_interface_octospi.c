@@ -1,4 +1,4 @@
-#include "spif_interface_octospi.h"
+#include "spif_internal.h"
 #include "stm32u5xx_hal_ospi.h"
 #include "spif.h"
 

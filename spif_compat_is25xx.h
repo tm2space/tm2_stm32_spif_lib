@@ -1,7 +1,7 @@
 #ifndef _SPIF_COMPAT_IS25_H_
 #define _SPIF_COMPAT_IS25_H_
 
-#include "spif_util.h"
+#include "spif_common.h"
 #include <stdlib.h>
 
 

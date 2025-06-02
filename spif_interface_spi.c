@@ -1,7 +1,13 @@
-#include "spif_interface_spi.h"
+#include "spif_internal.h"
 #include "spif.h"
 
 #if(SPIF_INTERFACE == SPIF_INTERFACE_SPI)
+
+
+bool SPI_SendInstruction(SPIF_HandleTypeDef *Handle, uint32_t Timeout);
+bool SPI_SendAddress(SPIF_HandleTypeDef *Handle, uint32_t Timeout);
+bool SPI_SendDummyCycles(SPIF_HandleTypeDef *Handle, uint32_t Timeout);
+
 
 // Instruction Phase
 bool SPI_SendInstruction(SPIF_HandleTypeDef *Handle, uint32_t Timeout) {

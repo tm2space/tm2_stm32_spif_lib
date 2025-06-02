@@ -1,7 +1,7 @@
 #ifndef _SPIF_INTERFACE_OCTOSPI_H_
 #define _SPIF_INTERFACE_OCTOSPI_H_
 
-#include "spif_util.h"
+#include "spif_internal.h"
 #include "stm32u5xx_hal_ospi.h"
 
 //bool SPIF_OCTOSPI_Init(SPIF_HandleTypeDef *Handle, OSPI_HandleTypeDef *HOspi, GPIO_TypeDef *Gpio, uint16_t Pin);

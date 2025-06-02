@@ -2,7 +2,7 @@
 #ifndef _SPIF_COMPAT_W25XX_H_
 #define _SPIF_COMPAT_W25XX_H_
 
-#include "spif_util.h"
+#include "spif_common.h"
 #include <stdlib.h>
 
 

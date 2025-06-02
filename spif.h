@@ -54,7 +54,7 @@ extern "C"
 #include <stdbool.h>
 #include <string.h>
 #include "NimaLTD.I-CUBE-SPIF_conf.h"
-#include "spif_util.h"
+#include "spif_common.h"
 
 #if (SPIF_INTERFACE == SPIF_INTERFACE_OCTOSPI)
 #include "stm32u5xx_hal.h"
