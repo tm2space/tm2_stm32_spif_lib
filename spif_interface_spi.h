@@ -2,7 +2,7 @@
 #define _SPIF_INTERFACE_SPI_H_
 
 #include "spif_util.h"
-#include "stm32u5xx_hal_spi.h"
+#include "spi.h"
 
 
 bool SPI_SendInstruction(SPIF_HandleTypeDef *Handle, uint32_t Timeout);

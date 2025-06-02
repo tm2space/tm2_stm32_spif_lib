@@ -63,19 +63,7 @@ extern "C"
 #include "stm32u5xx_hal_spi.h"
 #endif
 
-	bool SPIF_TransmitReceive(SPIF_HandleTypeDef *Handle, uint8_t *Tx,
-			uint8_t *Rx, size_t Size, uint32_t Timeout);
-	bool SPIF_Transmit(SPIF_HandleTypeDef *Handle, uint8_t *Tx, size_t Size,
-			uint32_t Timeout);
-	bool SPIF_Receive(SPIF_HandleTypeDef *Handle, uint8_t *Rx, size_t Size,
-			uint32_t Timeout);
 
-#if SPIF_DEBUG == SPIF_DEBUG_DISABLE
-#define dprintf(...)
-#else
-#include <stdio.h>
-#define dprintf(...) printf(__VA_ARGS__)
-#endif
 
 #if (SPIF_COMPAT == SPIF_COMPAT_W25XX)
 #include "spif_compat_w25xx.h"

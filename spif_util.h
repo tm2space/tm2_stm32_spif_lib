@@ -13,6 +13,13 @@
 #include "stm32u5xx_hal.h"
 
 
+#if SPIF_DEBUG == SPIF_DEBUG_DISABLE
+#define dprintf(...)
+#else
+#include <stdio.h>
+#define dprintf(...) printf(__VA_ARGS__)
+#endif
+
 
 /************************************************************************************************************
  **************    Public Definitions
@@ -123,6 +130,13 @@ void SPIF_SetInstructionPhase(SPIF_HandleTypeDef* handle, bool enabled, uint8_t 
 void SPIF_SetAddressPhase(SPIF_HandleTypeDef *handle, bool enabled, uint8_t size, uint32_t address);
 void SPIF_SetDummyCycles(SPIF_HandleTypeDef *handle, uint8_t cycles);
 void SPIF_SetDataPhase(SPIF_HandleTypeDef *handle, bool enabled);
+
+bool SPIF_TransmitReceive(SPIF_HandleTypeDef *Handle, uint8_t *Tx,
+		uint8_t *Rx, size_t Size, uint32_t Timeout);
+bool SPIF_Transmit(SPIF_HandleTypeDef *Handle, uint8_t *Tx, size_t Size,
+		uint32_t Timeout);
+bool SPIF_Receive(SPIF_HandleTypeDef *Handle, uint8_t *Rx, size_t Size,
+		uint32_t Timeout);
 
 
 #endif /* INC_SPIF_UTIL_H_ */
